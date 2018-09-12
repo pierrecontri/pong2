@@ -1,0 +1,100 @@
+<html>
+<head>
+<style type="text/css">
+.tablePingPong {
+    border-style : solid;
+    border-color : #000000;
+    border-height : 0px;
+    border-width : 0px 0px 0px 0px;
+    padding : 1px 1px 1px 1px;
+    height : 100%;
+    width : 100%;
+}
+.trPingPong {
+    border-style : solid;
+    border-color : #000000;
+    border-height : 0px;
+    border-width : 0px;
+    padding : 1px 1px 1px 1px;
+    height : 9px;
+}
+.tdPingPong {
+    border-style : solid;
+    border-height : 0px;
+    border-width : 0px 0px 1px 0px;
+    padding : 1px 1px 1px 1px;
+    height : 9px;
+}
+.tdRaquette {
+    border-style : solid;
+    border-height : 0px;
+    border-width : 0px 0px 0px 0px;
+    padding : 1px 1px 1px 1px;
+    height : 9px;
+}
+div.dping {
+    position : relative;
+    left : 0px;
+    top : 0px;
+    width : 2%;
+}
+div.dpong {
+    position : relative;
+    left : 0px;
+    top : 0px;
+    width : 2%;
+}
+</style>
+<script language="javascript">
+var x = 0;
+var y = 0;
+var posB = 0;
+
+function joue()
+{
+  var elemPing = document.getElementById("divping");
+  var elemPong = document.getElementById("divpong");
+  var elemBalle = document.getElementById("divballeping");
+
+  if (elemPing && elemPong && elemBalle)
+  {
+    elemPing.style.visibility = (posB < 40) ? "visible" : "hidden";
+    elemPong.style.visibility = (posB > 140) ? "visible" : "hidden";
+  }
+}
+
+function balle()
+{
+  if(x>90) x=0;
+  if(y>90) y=0;
+
+  var elemBalle = document.getElementById("divballeping");
+  if (elemBalle)
+  {
+    var echelleX = document.body.clientWidth * 0.36;
+    //echelleX = 1 / echelleX;
+    var echelleY = 50 / document.body.clientHeight;
+    echelleY = 1 / echelleY;
+    posB = Math.abs(Math.round((Math.cos(x) + 1) * echelleX));
+    elemBalle.style.left = posB;
+    elemBalle.style.top = -Math.abs(Math.round((Math.sin(y)) * 20 * echelleY));
+    x++;
+    y++;
+  }
+  joue();
+  setTimeout('balle()',150);
+}
+</script>
+</head>
+<body onload="balle()" onresize="javascript:document.location.reload();">
+  <table id="idTable" class="tablePingPong">
+    <tr id="trPing1" class="trPingPong" cellpadding="0" cellspacing="0" valign="bottom">
+      <td id="tdRack1" class="tdRaquette" width="10%" align="right"><div id="divping" style="visibility: hidden;">O<br>/&nbsp;&nbsp;</div></td>
+      <td id="tdPing1" class="tdPingPong" width="39%" align="left"><div id="divballeping" class="dping" style="visibility: visible;">o</div></td>
+      <td id="tdFil" class="tdPingPong" width="2%" align="center">|</td>
+      <td id="tdPing2" class="tdPingPong" width="39%" align="left"><div id="divballepong" class="dpong" style="visibility: hidden;">o</div></td>
+      <td id="tdRack2" class="tdRaquette" width="10%" align="left"><div id="divpong" style="visibility: hidden;">O<br>&nbsp;&nbsp;\</div></td>
+    </tr>
+  </table>
+</body>
+</html>

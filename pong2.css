@@ -1,0 +1,35 @@
+.Ball {
+  top: 0px;
+  left: 0px;
+  position: absolute;
+  color: #000000;
+}
+
+.Carriage {
+  top: 0px;
+  left: 0px;
+  position: absolute;
+  color: #000000;
+}
+
+.Brique {
+  top: 0px;
+  left: 0px;
+  position: absolute;
+  color: #000000;
+}
+
+TABLE {
+  border: 2px solid black;
+  font-size: 6;
+  background-color: red;
+  border-color: black;
+}
+
+TD {
+  border: 1px solid blue;
+}
+
+#cassBriqueMaitre {
+  visibility: hidden;
+}
