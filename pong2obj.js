@@ -73,7 +73,7 @@ function Balle(numero) {
     this.element.name = "balle";
     this.element.className = "Ball";
     this.printForm = function () {
-        this.element.innerHTML = (graphismeImg) ? "<img src='balle.jpg' style='width: 16px; height: 16px; border: 0px none;'/>" : "O";
+        this.element.innerHTML = (graphismeImg) ? "<img src='img/balle.jpg' style='width: 16px; height: 16px; border: 0px none;'/>" : "O";
     };
     this.printForm();
     // randomisation du positionnement des balles
@@ -233,8 +233,8 @@ function Brique(numero) {
     this.printForm = function () {
         var isBrokenBrique = (typeBrique == 3) && (this.element.resistance == 1);
         this.element.innerHTML = (graphismeImg) ?
-                                    ((!isBrokenBrique) ? "<img src='brique.jpg' style='width: 45px; height: 26px;'/>" :
-                                                         "<img src='brokenbrique.jpg' style='width: 45px; height: 26px;'/>") :
+                                    ((!isBrokenBrique) ? "<img src='img/brique.jpg' style='width: 45px; height: 26px;'/>" :
+                                                         "<img src='img/brokenbrique.jpg' style='width: 45px; height: 26px;'/>") :
                                     ((!isBrokenBrique) ? "<table border=\"2\" class=\"InterieurBrique\"><tr><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;</td><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;</td><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;</td></tr></table>":
                                                          "<table border=\"2\" class=\"InterieurBrique\"><tr><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;&nbsp;</td><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
     };
@@ -323,7 +323,7 @@ function Carriage() {
     var tmpX = 20; // taille temporaire du chariot
 
     this.printForm = function () {
-        this.element.innerHTML = (graphismeImg) ? "<img src='palette.jpg'/>" : "__________";
+        this.element.innerHTML = (graphismeImg) ? "<img src='img/palette.jpg'/>" : "__________";
         if (this.doubleCarriage) this.element.innerHTML += this.element.innerHTML;
         tmpX = this.getSize().x;
     };
