@@ -17,46 +17,51 @@ const isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anc
 // types declaration
 
 // graphical object
+// has to be herit
 function graphicalObject(objectName, objectNumber) {
-    // variables
-    this.element = document.createElement('DIV');
-    this.element.id = objectName + objectNumber;
-    this.element.name = objectName;
-    this.element.className = objectName;
-	
-    this.position = {
-        x: 0,
-        y: 0
+  // variables
+  this.element = document.createElement('DIV');
+  this.element.id = objectName + objectNumber;
+  this.element.name = objectName;
+  this.element.className = objectName;
+
+  this.position = { x: 0, y: 0 };
+
+  this.coordinates = function() {
+    let tmpSize = this.size();
+    return {
+      x1: this.position.x,
+      y1: this.position.y,
+      x2: this.position.x + tmpSize.x,
+      y2: this.position.y + tmpSize.y
     };
+  }
 
-    this.coordinates = function() {
-      let tmpSize = this.size();
-      return {
-        x1: this.position.x,
-        y1: this.position.y,
-        x2: this.position.x + tmpSize.x,
-        y2: this.position.y + tmpSize.y
-      };
+  this.size = function() {
+    return {
+      x: (isIE) ? this.element.offsetWidth : this.element.clientWidth,
+      y: (isIE) ? this.element.offsetHeight : this.element.clientHeight
     }
-
-    this.size = function() {
-      return {
-        x: (isIE) ? this.element.offsetWidth : this.element.clientWidth,
-        y: (isIE) ? this.element.offsetHeight : this.element.clientHeight
-      }
-    }
+  }
 }
 
 // ball
 function ball(ballNumber) {
-    // herits of graphicalObject
-    this.prototype = new graphicalObject("ball", ballNumber);
-    this.prototype.element.resistance = 1;
+  // herits of graphicalObject
+  this.prototype = new graphicalObject(this.constructor.name, ballNumber);
+  this.prototype.element.resistance = 1;
 
-    return this.prototype;
+  return this.prototype;
 }
 
 // carriage
+function carriage(carriageName) {
+  // herits of graphicalObject
+  this.prototype = new graphicalObject(this.constructor.name, carriageName);
+  this.prototype.element.resistance = 1;
+
+  return this.prototype;
+}
 
 // brick
 
