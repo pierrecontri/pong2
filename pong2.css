@@ -5,6 +5,10 @@ body {
   display: block;
 }
 
+img {
+  margin: 0px;
+}
+
 #game {
   min-width: 340px;
   min-height: 320px;
@@ -33,21 +37,27 @@ body {
   left: 0px;
   position: absolute;
   color: #000000;
+  margin: 0px;
+  padding: 0px;
+  width: 45px;
+  height: 25px;
 }
 
-.InsideBrick {
-  border: 4px solid;
+.brickImg {
+  width: 45px;
+  height: 25px;
 }
 
 TABLE {
   border: 2px solid black;
-  font-size: 6;
+  border-collapse: collapse;
+  font-size: smaller;
   background-color: red;
   border-color: black;
 }
 
 TD {
-  border: 2px solid blue;
+  border: 2px solid black;
 }
 
 #cassBriqueMaitre {

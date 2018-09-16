@@ -233,8 +233,8 @@ function Brick(numero) {
     this.printForm = function () {
         let isBrickBroken = (brickType == 3) && (this.element.resistance == 1);
         this.element.innerHTML = (graphismeImg) ?
-                                    ((!isBrickBroken) ? "<img src='img/Brique.jpg' style='width: 45px; height: 26px;'/>" :
-                                                         "<img src='img/brokenBrique.jpg' style='width: 45px; height: 26px;'/>") :
+                                    ((!isBrickBroken) ? "<img class='brickImg' src='img/Brique.jpg'/>" :
+                                                         "<img class='brickImg' src='img/brokenBrique.jpg'/>") :
                                     ((!isBrickBroken) ? "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
                                                          "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
     };
@@ -266,9 +266,9 @@ function Brick(numero) {
     };
 
     // positionner la Brick sur le jeu à un endroit libre
-    //do {
+    do {
         this.posRnd = this.getRandomPosition();
-    //} while (containtBrickPosition(this));
+    } while (containtBrickPosition(this));
 
     this.element.style.left = this.posRnd.x + "px";
     this.element.style.top = this.posRnd.y + "px";
