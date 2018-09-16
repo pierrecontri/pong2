@@ -10,20 +10,20 @@
 /* ** -- Version 1.1 :  pause plus grossissement balle    -- ** */
 /* ** -- Version 1.2 :  trois balles                      -- ** */
 /* ** -- Version 1.3 :  debut de gestion de la souris     -- ** */
-/* ** -- Version 1.4 :  creation des briques              -- ** */
-/* ** -- Version 1.5 :  gestion des briques               -- ** */
+/* ** -- Version 1.4 :  creation des Bricks              -- ** */
+/* ** -- Version 1.5 :  gestion des Bricks               -- ** */
 /* ** -- Version 2.0 :  code de qualite                   -- ** */
 /* ** -- Version 2.1 :  passage en code objet             -- ** */
 /* ** -- Version 2.2 :  simplification sur objets         -- ** */
 /* ** -- Version 2.3 :  compatibilite FireFox             -- ** */
 /* ** -- Version 2.4 :  simplification du code            -- ** */
-/* ** -- Version 2.5 :  alignement des briques sur grille -- ** */
+/* ** -- Version 2.5 :  alignement des Bricks sur grille -- ** */
 /* ** -- Version 2.6 :  acceleration calculs              -- ** */
-/* ** -- Version 2.7 :  pouvoirs sur briques              -- ** */
+/* ** -- Version 2.7 :  pouvoirs sur Bricks              -- ** */
 /* ** -- Version 2.8 :  reduction du code                 -- ** */
 /* ** -- Version 2.9 :  correction interpreteur JavaScr   -- ** */
 /* ** -- Version 3.0 :  amelioration qualite code         -- ** */
-/* ** -- Version 3.1 :  brique avec double resistance     -- ** */
+/* ** -- Version 3.1 :  Brick avec double resistance     -- ** */
 /* ** ------------------------------------------------------ ** */
 
 'use strict';
@@ -31,51 +31,52 @@
 // Declaration des objets du jeu
 // Variables globales pour le joueur
 var nbBalls = 9;
-var nbBriques = 60;
+var nbBricks = 60;
 var deltadepl = 3; // pour toutes les balles
 var timeOutdepl = 5; // temps en millisecondes de boucle du jeu
 var isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
 
 // Variables de la classe __main__
-var deplScreen = { x: 0, y: 0 };
+var deplScreen = null;
 var basculeTriche = false;
 var precisionErreur = 1;
 var graphismeImg = true;
 
 var divJeu = null;
 var tabBalls = null;
-var tabBriques = null;
+var tabBricks = null;
 var carriage = null;
 
 // Redefinition de l'objet Array
 // Ajout d'une methode remove
 Array.prototype.remove = function (obj) {
-    var tmpArray = new Array();
+    let tmpArray = new Array();
     for (var i = 0, len = this.length; i < len; i++) {
         if (this[i] != obj) tmpArray.push(this[i]);
     }
     return tmpArray;
-    /*
-    for (var i = 0, len = this.length; i < len; i++) {
-        if (this[i] == obj) {
-            return this.slice(i, 1);
-        }
-    }
-    return null;
-    */
 };
 
-// Objet "Balle"
-function Balle(numero) {
+function getSizeScreen() {
+    return {
+        x: ((isIE) ? document.body.offsetWidth : document.body.clientWidth) - 40,
+        y: ((isIE) ? document.body.offsetHeight : document.body.clientHeight) - 30
+    };
+}
+
+// Objet "Ball"
+function Ball(numero) {
+
     // variables
     this.element = document.createElement('DIV');
-    this.element.id = "movBall" + numero;
-    this.element.name = "balle";
+    this.element.id = "ball" + numero;
+    this.element.name = "ball";
     this.element.className = "Ball";
     this.printForm = function () {
         this.element.innerHTML = (graphismeImg) ? "<img src='img/balle.jpg' style='width: 16px; height: 16px; border: 0px none;'/>" : "O";
     };
     this.printForm();
+
     // randomisation du positionnement des balles
     this.deplX = Math.floor((deplScreen.x) * Math.random());
     this.deplY = Math.floor((deplScreen.y) * Math.random());
@@ -87,8 +88,8 @@ function Balle(numero) {
 
     // methodes
     // changer la balle de sens
-    this.changeBallSens = function (sens) {
-        if (sens == 'X')
+    this.changeBallSens = function (orientation) {
+        if (orientation == 'X')
             this.deplXPos = !this.deplXPos;
         else
             this.deplYPos = !this.deplYPos;
@@ -122,17 +123,17 @@ function Balle(numero) {
         }
     };
 
-    // casser les briques sur son passage
-    this.breakBrique = function () {
-        if (tabBriques == null) return false;
+    // casser les Bricks sur son passage
+    this.breakBrick = function () {
+        if (tabBricks == null) return false;
         var breakB = false;
-        // parcourir les briques pour savoir si la balle est dans la zone de l'une d'entre-elles.
-        for (var idxBrique = 0, lenB = tabBriques.length; idxBrique < lenB; idxBrique++) {
-            var tmpBrique = tabBriques[idxBrique];
-            var intersect = intersectBallBrique(this, tmpBrique);
-            if (intersect.breakBrique) {
-                tmpBrique.breakBrique();
-                this.changeBallSens(intersect.sens);
+        // parcourir les Bricks pour savoir si la balle est dans la zone de l'une d'entre-elles.
+        for (var idxBrick = 0, lenB = tabBricks.length; idxBrick < lenB; idxBrick++) {
+            var tmpBrick = tabBricks[idxBrick];
+            var intersect = intersectBallBrick(this, tmpBrick);
+            if (intersect.breakBrick) {
+                tmpBrick.breakBrick();
+                this.changeBallSens(intersect.orientation);
                 breakB = true;
             }
         }
@@ -174,116 +175,115 @@ function Balle(numero) {
         if (!this.isInArea())
             this.killBall();
         else
-            this.breakBrique();
+            this.breakBrick();
     };
 }
 
+function intersectBallBrick(tmpBall, tmpBrick) {
+    var intersect = { breakBrick: false, orientation: 'X' };
 
-function intersectBallBrique(tmpBall, tmpBrique) {
-    var intersect = { breakBrique: false, sens: 'X' };
-
-    if (tmpBrique != null && tmpBall != null) {
+    if (tmpBrick != null && tmpBall != null) {
         var Xball = tmpBall.deplX + Math.floor(((isIE) ? tmpBall.element.offsetWidth : tmpBall.element.clientWidth) / 2);
         var Yball = tmpBall.deplY + Math.floor(((isIE) ? tmpBall.element.offsetHeight : tmpBall.element.clientHeight) / 2);
 
-        var X1brique = tmpBrique.element.offsetLeft;
-        var X2brique = X1brique + ((isIE) ? tmpBrique.element.offsetWidth : tmpBrique.element.clientWidth);
+        var X1Brick = tmpBrick.element.offsetLeft;
+        var X2Brick = X1Brick + ((isIE) ? tmpBrick.element.offsetWidth : tmpBrick.element.clientWidth);
 
-        var Y1brique = tmpBrique.element.offsetTop;
-        var Y2brique = Y1brique + ((isIE) ? tmpBrique.element.offsetHeight : tmpBrique.element.clientHeight);
+        var Y1Brick = tmpBrick.element.offsetTop;
+        var Y2Brick = Y1Brick + ((isIE) ? tmpBrick.element.offsetHeight : tmpBrick.element.clientHeight);
 
         // prise en compte d'erreur de calcul processeur
-        if (((X1brique <= Xball && Xball <= X2brique) &&
-            (Math.abs(Yball - Y2brique) <= precisionErreur))
+        if (((X1Brick <= Xball && Xball <= X2Brick) &&
+            (Math.abs(Yball - Y2Brick) <= precisionErreur))
            ||
-           ((X1brique <= Xball && Xball <= X2brique) &&
-            (Math.abs(Yball - Y1brique) <= precisionErreur))) {
-            intersect.breakBrique = true;
-            intersect.sens = 'Y';
+           ((X1Brick <= Xball && Xball <= X2Brick) &&
+            (Math.abs(Yball - Y1Brick) <= precisionErreur))) {
+            intersect.breakBrick = true;
+            intersect.orientation = 'Y';
         }
-        else if (((Y1brique <= Yball && Yball <= Y2brique) &&
-            (Math.abs(Xball - X2brique) <= precisionErreur))
+        else if (((Y1Brick <= Yball && Yball <= Y2Brick) &&
+            (Math.abs(Xball - X2Brick) <= precisionErreur))
            ||
-           ((Y1brique <= Yball && Yball <= Y2brique) &&
-            (Math.abs(Xball - X1brique) <= precisionErreur))) {
-            intersect.breakBrique = true;
-            intersect.sens = 'X';
+           ((Y1Brick <= Yball && Yball <= Y2Brick) &&
+            (Math.abs(Xball - X1Brick) <= precisionErreur))) {
+            intersect.breakBrick = true;
+            intersect.orientation = 'X';
         }
     }
 
     return intersect;
 }
 
-// Objet Brique
-function Brique(numero) {
+// Objet Brick
+function Brick(numero) {
     this.numero = numero;
     this.element = document.createElement('div');
-    this.element.id = "brique" + numero;
-    this.element.name = "brique";
-    this.element.className = "Brique";
+    this.element.id = "brick" + numero;
+    this.element.name = "brick";
+    this.element.className = "Brick";
     this.element.resistance = 1;
-    // type de brique
+    // type de Brick
     // 1) multiplier les balles
     // 2) doubler le chariot
-    // 3) brique double résistance
-    var typeBrique = Math.floor(5 * Math.random());
-    if (typeBrique == 3)
+    // 3) Brick double rÃ©sistance
+    let brickType = Math.floor(5 * Math.random());
+    if (brickType == 3)
         this.element.resistance = 2;
 
     this.printForm = function () {
-        var isBrokenBrique = (typeBrique == 3) && (this.element.resistance == 1);
+        let isBrickBroken = (brickType == 3) && (this.element.resistance == 1);
         this.element.innerHTML = (graphismeImg) ?
-                                    ((!isBrokenBrique) ? "<img src='img/brique.jpg' style='width: 45px; height: 26px;'/>" :
-                                                         "<img src='img/brokenbrique.jpg' style='width: 45px; height: 26px;'/>") :
-                                    ((!isBrokenBrique) ? "<table border=\"2\" class=\"InterieurBrique\"><tr><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;</td><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;</td><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;</td></tr></table>":
-                                                         "<table border=\"2\" class=\"InterieurBrique\"><tr><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;&nbsp;</td><td style=\"border-color: blue;\">&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
+                                    ((!isBrickBroken) ? "<img src='img/Brique.jpg' style='width: 45px; height: 26px;'/>" :
+                                                         "<img src='img/brokenBrique.jpg' style='width: 45px; height: 26px;'/>") :
+                                    ((!isBrickBroken) ? "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
+                                                         "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
     };
     this.printForm();
-    // ajout de la brique au jeu
+    // append brick to the game
     divJeu.appendChild(this.element);
 
-    this.briqueSize = {
+    this.size = {
         x: (isIE) ? this.element.offsetWidth : this.element.clientWidth,
         y: (isIE) ? this.element.offsetHeight : this.element.clientHeight
     };
 
     this.getRandomPosition = function () {
         // positionnement aleatoire sur la grille
-        var tmpPos = {
+        let tmpPos = {
             x: (deplScreen.x) * Math.random(),
             y: (deplScreen.y * 3 / 5) * Math.random()
         };
 
         // alignement sur une grille virtuelle
-        tmpPos.x = Math.floor(tmpPos.x / this.briqueSize.x) * this.briqueSize.x;
-        tmpPos.y = Math.floor(tmpPos.y / this.briqueSize.y) * this.briqueSize.y;
+        tmpPos.x = Math.floor(tmpPos.x / this.size.x) * this.size.x;
+        tmpPos.y = Math.floor(tmpPos.y / this.size.y) * this.size.y;
 
         return tmpPos;
     };
 
-    this.isEqualPosition = function (tmpBrique) {
-        return (this.posRnd.x == tmpBrique.posRnd.x && this.posRnd.y == tmpBrique.posRnd.y);
+    this.isEqualPosition = function (tmpBrick) {
+        return (this.posRnd.x == tmpBrick.posRnd.x && this.posRnd.y == tmpBrick.posRnd.y);
     };
 
-    // positionner la brique sur le jeu à un endroit libre
-    do {
+    // positionner la Brick sur le jeu Ã  un endroit libre
+    //do {
         this.posRnd = this.getRandomPosition();
-    } while (containtBriquePosition(this));
+    //} while (containtBrickPosition(this));
 
     this.element.style.left = this.posRnd.x + "px";
     this.element.style.top = this.posRnd.y + "px";
 
-    // destruction de la brique
-    this.breakBrique = function () {
+    // destruction de la Brick
+    this.breakBrick = function () {
         // performances problem
         //this.element.resistance--;
-        switch (typeBrique) {
+        switch (brickType) {
             case 0:
                 var nbBallDem = 3;
                 //if (nbBalls < nbBallDem) nbBallDem = nbBalls;
                 nbBallDem = nbBallDem - tabBalls.length;
                 for (var i = 0; i < nbBallDem; i++)
-                    tabBalls.push(new Balle(tabBalls.length));
+                    tabBalls.push(new Ball(tabBalls.length));
                 break;
             case 1:
                 carriage.doubleCarriage = true;
@@ -303,14 +303,14 @@ function Brique(numero) {
                 break;
         }
         divJeu.removeChild(this.element);
-        tabBriques = tabBriques.remove(this);
+        tabBricks = tabBricks.remove(this);
         return true;
     };
 }
 
-function containtBriquePosition(searchBrique) {
-    for (var i = 0, tabBriquesLength = tabBriques.length; i < tabBriquesLength; i++) {
-        if (searchBrique.isEqualPosition(tabBriques[i])) return true;
+function containtBrickPosition(searchBrick) {
+    for (var i = 0, tabBricksLength = tabBricks.length; i < tabBricksLength; i++) {
+        if (searchBrick.isEqualPosition(tabBricks[i])) return true;
     }
     return false;
 }
@@ -320,12 +320,10 @@ function Carriage() {
     this.element = document.createElement('DIV');
     this.element.id = "carriage";
     this.element.className = "Carriage";
-    var tmpX = 20; // taille temporaire du chariot
 
     this.printForm = function () {
         this.element.innerHTML = (graphismeImg) ? "<img src='img/palette.jpg'/>" : "__________";
         if (this.doubleCarriage) this.element.innerHTML += this.element.innerHTML;
-        tmpX = this.getSize().x;
     };
 
     this.getSize = function () {
@@ -338,7 +336,7 @@ function Carriage() {
     this.printForm();
 
     this.deltaCarriage = 20;
-    this.element.style.top = deplScreen.y;
+    this.element.style.top = getSizeScreen().y + "px";
     this.posCarriage = (deplScreen.x / 2);
     this.element.style.left = this.posCarriage + "px";
     this.doubleCarriage = false;
@@ -349,19 +347,21 @@ function Carriage() {
     };
 
     this.move = function (newPosition) {
-        if ((newPosition - (tmpX / 2)) > 0 && (newPosition + (tmpX / 2)) <= deplScreen.x && !basculeTriche) {
-            this.posCarriage = newPosition - (tmpX / 2);
+        let carriageSize = this.getSize().x;
+        console.log(carriageSize);
+        if ((newPosition - (carriageSize / 2)) > 0 && (newPosition + (carriageSize / 2)) <= deplScreen.x && !basculeTriche) {
+            this.posCarriage = newPosition - (carriageSize / 2);
             this.refresh();
         }
     };
 
     this.moveLeft = function () {
-        var tmpPosL = this.posCarriage + (tmpX / 2) - this.deltaCarriage;
+        let tmpPosL = this.posCarriage + (this.getSize().x / 2) - this.deltaCarriage;
         this.move(tmpPosL);
     };
 
     this.moveRight = function () {
-        var tmpPosR = this.posCarriage + (tmpX / 2) + this.deltaCarriage;
+        let tmpPosR = this.posCarriage + (this.getSize().x / 2) + this.deltaCarriage;
         this.move(tmpPosR);
     };
 
@@ -378,13 +378,12 @@ function Carriage() {
 
     // ajouter le chariot au jeu
     divJeu.appendChild(this.element);
-    // recuperer la taille du chariot
-    tmpX = this.getSize().x;
 }
 
 function Init() {
     deplScreen = getSizeScreen();
-    divJeu = document.getElementById("jeu");
+    console.log(deplScreen);
+    divJeu = document.getElementById("game");
     if (!divJeu) return false;
 
     // Creer le chariot
@@ -392,12 +391,12 @@ function Init() {
 
     // Creation d'une balle
     tabBalls = new Array();
-    tabBalls.push(new Balle(0));
+    tabBalls.push(new Ball(0));
 
-    // Initialisation des briques
-    tabBriques = new Array();
-    for (var i = 0; i < nbBriques; i++)
-        tabBriques.push(new Brique(i));
+    // Initialisation des Bricks
+    tabBricks = new Array();
+    for (var i = 0; i < nbBricks; i++)
+        tabBricks.push(new Brick(i));
 
     // gestion clavier et sourris
     document.onkeypress = handlerKey;
@@ -409,20 +408,14 @@ function Init() {
     return true;
 }
 
-function getSizeScreen() {
-    return {
-        x: ((isIE) ? document.body.offsetWidth : document.body.clientWidth) - 40,
-        y: ((isIE) ? document.body.offsetHeight : document.body.clientHeight) - 30
-    };
-}
-
 function goBall() {
-    // bouger les balles
-    for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++) {
-        if(tabBalls[i]) tabBalls[i].move();
-    } // end for
+  // move balls
+  tabBalls.map(
+    function(objBall) {
+      objBall.move()
+    });
 
-    // perdu si plus de balles
+    // game over if nomore balls
     if (tabBalls == null || tabBalls.length == 0) {
         if (confirm("Game Over !\nStart a new part ?"))
             document.location.reload();
@@ -430,8 +423,8 @@ function goBall() {
             return false;
     }
 
-    // relancer le jeu si plus de briques
-    if (tabBriques == null || tabBriques.length == 0) {
+    // restart game if nomore Bricks
+    if (tabBricks == null || tabBricks.length == 0) {
         if (confirm("Congratulations !\nStart a new part ?"))
             document.location.reload();
         else
@@ -443,8 +436,6 @@ function goBall() {
 
 function handlerKey(e) {
     var keyPress = (isIE) ? event.keyCode : e.which;
-console.log(e.which);
-console.log(e.code);
 
     if (keyPress == 43 && timeOutdepl > 1) timeOutdepl--;
     else if (keyPress == 45) timeOutdepl++;
@@ -465,7 +456,7 @@ console.log(e.code);
         if (nbBalls < nbBallDem) nbBallDem = nbBalls;
         nbBallDem = nbBallDem - tabBalls.length;
         for (var i = 0; i < nbBallDem; i++)
-            tabBalls.push(new Balle(tabBalls.length));
+            tabBalls.push(new Ball(tabBalls.length));
     }
     else if (keyPress == 32) carriage.triche(); // espace
     else if (keyPress == 27 || (!isIE && e.code == 'Escape')) alert("Pause, v'la le chef !\nOK pour continuer ..."); // escape
@@ -475,10 +466,10 @@ console.log(e.code);
         if (tabBalls == null) return false;
         for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++)
             tabBalls[i].printForm();
-        // changer le graphisme des briques
-        if (tabBriques == null) return false;
-        for (var i = 0, tabBriquesLen = tabBriques.length; i < tabBriquesLen; i++)
-            tabBriques[i].printForm();
+        // changer le graphisme des Bricks
+        if (tabBricks == null) return false;
+        for (var i = 0, tabBricksLen = tabBricks.length; i < tabBricksLen; i++)
+            tabBricks[i].printForm();
         // changer le graphisme du chariot
         carriage.printForm();
     }

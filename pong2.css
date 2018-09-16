@@ -1,3 +1,19 @@
+body {
+  height: 100%;
+  width:100%;
+  margin: 0px;
+  display: block;
+}
+
+#game {
+  min-width: 340px;
+  min-height: 320px;
+  position: relative;
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
 .Ball {
   top: 0px;
   left: 0px;
@@ -12,11 +28,15 @@
   color: #000000;
 }
 
-.Brique {
+.Brick {
   top: 0px;
   left: 0px;
   position: absolute;
   color: #000000;
+}
+
+.InsideBrick {
+  border: 4px solid;
 }
 
 TABLE {
@@ -27,7 +47,7 @@ TABLE {
 }
 
 TD {
-  border: 1px solid blue;
+  border: 2px solid blue;
 }
 
 #cassBriqueMaitre {
