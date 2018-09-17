@@ -47,6 +47,11 @@ var tabBalls = null;
 var tabBricks = null;
 var carriage = null;
 
+const MOVING_DIRECTION = {
+    'LEFT'  : -1,
+    'RIGHT' : 1
+}
+
 // Redefinition de l'objet Array
 // Ajout d'une methode remove
 Array.prototype.remove = function (obj) {
@@ -57,10 +62,10 @@ Array.prototype.remove = function (obj) {
     return tmpArray;
 };
 
-function getSizeScreen() {
+function getScreenSize() {
     return {
-        x: ((isIE) ? document.body.offsetWidth : document.body.clientWidth) - 40,
-        y: ((isIE) ? document.body.offsetHeight : document.body.clientHeight) - 30
+        x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - 40,
+        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - 30
     };
 }
 
@@ -250,8 +255,8 @@ function Brick(numero) {
     this.getRandomPosition = function () {
         // positionnement aleatoire sur la grille
         let tmpPos = {
-            x: (deplScreen.x) * Math.random(),
-            y: (deplScreen.y * 3 / 5) * Math.random()
+            x: ((deplScreen.x) * Math.random()),
+            y: ((deplScreen.y * 3 / 5) * Math.random())
         };
 
         // alignement sur une grille virtuelle
@@ -262,7 +267,8 @@ function Brick(numero) {
     };
 
     this.isEqualPosition = function (tmpBrick) {
-        return (this.posRnd.x == tmpBrick.posRnd.x && this.posRnd.y == tmpBrick.posRnd.y);
+        return (this.posRnd.x == tmpBrick.posRnd.x 
+             && this.posRnd.y == tmpBrick.posRnd.y);
     };
 
     // positionner la Brick sur le jeu à un endroit libre
@@ -273,7 +279,7 @@ function Brick(numero) {
     this.element.style.left = this.posRnd.x + "px";
     this.element.style.top = this.posRnd.y + "px";
 
-    // destruction de la Brick
+    // destruction of the brick
     this.breakBrick = function () {
         // performances problem
         //this.element.resistance--;
@@ -294,7 +300,7 @@ function Brick(numero) {
                 // performances problem
                 // must get the 'this.element.resistance' decrease here
                 this.element.resistance--;
-                if (this.element.resistance > 0) {
+                if (this.element.resistance != 0) {
                     this.printForm();
                     return false;
                 }
@@ -322,7 +328,7 @@ function Carriage() {
     this.element.className = "Carriage";
 
     this.printForm = function () {
-        this.element.innerHTML = (graphismeImg) ? "<img src='img/palette.jpg'/>" : "__________";
+        this.element.innerHTML = (graphismeImg) ? "<img src='img/palette.jpg'/>" : "".padEnd(10, "_");
         if (this.doubleCarriage) this.element.innerHTML += this.element.innerHTML;
     };
 
@@ -336,39 +342,32 @@ function Carriage() {
     this.printForm();
 
     this.deltaCarriage = 20;
-    this.element.style.top = getSizeScreen().y + "px";
+    this.element.style.top = getScreenSize().y + "px";
     this.posCarriage = (deplScreen.x / 2);
     this.element.style.left = this.posCarriage + "px";
     this.doubleCarriage = false;
 
-    this.refresh = function () {
-        if (!basculeTriche)
-            this.element.style.left = this.posCarriage + "px";
-    };
-
     this.move = function (newPosition) {
         let carriageSize = this.getSize().x;
-        console.log(carriageSize);
-        if ((newPosition - (carriageSize / 2)) > 0 && (newPosition + (carriageSize / 2)) <= deplScreen.x && !basculeTriche) {
+
+        if (!basculeTriche
+            && (newPosition - (carriageSize / 2)) > 0
+            && (newPosition + (carriageSize / 2)) <= deplScreen.x) {
+
             this.posCarriage = newPosition - (carriageSize / 2);
-            this.refresh();
+            this.element.style.left = this.posCarriage + "px";
         }
     };
 
-    this.moveLeft = function () {
-        let tmpPosL = this.posCarriage + (this.getSize().x / 2) - this.deltaCarriage;
+    this.moveTo = function (direction) {
+        let tmpPosL = this.posCarriage + (this.getSize().x / 2) + (direction * this.deltaCarriage);
         this.move(tmpPosL);
-    };
-
-    this.moveRight = function () {
-        let tmpPosR = this.posCarriage + (this.getSize().x / 2) + this.deltaCarriage;
-        this.move(tmpPosR);
-    };
+    }
 
     this.triche = function () {
         basculeTriche = !basculeTriche;
         if (basculeTriche) {
-            this.element.innerHTML = "__________________________________________________________________";
+            this.element.innerHTML = "".padEnd(50,"_");
             this.element.style.left = "0px";
         }
         else {
@@ -381,7 +380,7 @@ function Carriage() {
 }
 
 function Init() {
-    deplScreen = getSizeScreen();
+    deplScreen = getScreenSize();
     console.log(deplScreen);
     divJeu = document.getElementById("game");
     if (!divJeu) return false;
@@ -487,10 +486,10 @@ function handlerKey(e) {
 function movCarriageByKeyboard(e) {
     switch ((isIE) ? event.keyCode : e.which) {
         case 37:  //deplacement vers la gauche
-            carriage.moveLeft();
+            carriage.moveTo(MOVING_DIRECTION.LEFT);
             break;
         case 39: //deplacement vers la droite
-            carriage.moveRight();
+            carriage.moveTo(MOVING_DIRECTION.RIGHT);
             break;
         case 38: //acceleration du deplacement chariot
             carriage.deltaCarriage++;
