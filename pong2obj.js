@@ -23,7 +23,7 @@
 /* ** -- Version 2.8 :  reduction du code                 -- ** */
 /* ** -- Version 2.9 :  correction interpreteur JavaScr   -- ** */
 /* ** -- Version 3.0 :  amelioration qualite code         -- ** */
-/* ** -- Version 3.1 :  Brick avec double resistance     -- ** */
+/* ** -- Version 3.1 :  Brick with double strength     -- ** */
 /* ** ------------------------------------------------------ ** */
 
 'use strict';
@@ -49,7 +49,8 @@ var carriage = null;
 
 const MOVING_DIRECTION = {
     'LEFT'  : -1,
-    'RIGHT' : 1
+    'RIGHT' : 1,
+    'NONE'  : 0
 }
 
 // Redefinition de l'objet Array
@@ -77,10 +78,10 @@ function Ball(numero) {
     this.element.id = "ball" + numero;
     this.element.name = "ball";
     this.element.className = "Ball";
-    this.printForm = function () {
+    this.printObject = function () {
         this.element.innerHTML = (graphismeImg) ? "<img src='img/balle.jpg' style='width: 16px; height: 16px; border: 0px none;'/>" : "O";
     };
-    this.printForm();
+    this.printObject();
 
     // randomisation du positionnement des balles
     this.deplX = Math.floor((deplScreen.x) * Math.random());
@@ -124,7 +125,7 @@ function Ball(numero) {
         // enlever la double palette si une balle se perd
         if (carriage.doubleCarriage) {
             carriage.doubleCarriage = false;
-            carriage.printForm();
+            carriage.printObject();
         }
     };
 
@@ -226,24 +227,25 @@ function Brick(numero) {
     this.element.id = "brick" + numero;
     this.element.name = "brick";
     this.element.className = "Brick";
-    this.element.resistance = 1;
-    // type de Brick
-    // 1) multiplier les balles
-    // 2) doubler le chariot
-    // 3) Brick double résistance
+    this.element.strength = 1;
+    // type of Brick
+    // 1) multiply balls
+    // 2) double carriage
+    // 3) Brick double strength
+    // 4) unbreakable
     let brickType = Math.floor(5 * Math.random());
     if (brickType == 3)
-        this.element.resistance = 2;
+        this.element.strength = 2;
 
-    this.printForm = function () {
-        let isBrickBroken = (brickType == 3) && (this.element.resistance == 1);
+    this.printObject = function () {
+        let isBrickBroken = (brickType == 3) && (this.element.strength == 1);
         this.element.innerHTML = (graphismeImg) ?
                                     ((!isBrickBroken) ? "<img class='brickImg' src='img/Brique.jpg'/>" :
                                                          "<img class='brickImg' src='img/brokenBrique.jpg'/>") :
                                     ((!isBrickBroken) ? "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
                                                          "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
     };
-    this.printForm();
+    this.printObject();
     // append brick to the game
     divJeu.appendChild(this.element);
 
@@ -282,7 +284,7 @@ function Brick(numero) {
     // destruction of the brick
     this.breakBrick = function () {
         // performances problem
-        //this.element.resistance--;
+        //this.element.strength--;
         switch (brickType) {
             case 0:
                 var nbBallDem = 3;
@@ -293,18 +295,22 @@ function Brick(numero) {
                 break;
             case 1:
                 carriage.doubleCarriage = true;
-                carriage.printForm();
+                carriage.printObject();
                 break;
             case 3:
-                // double resistance
+                // double strength
                 // performances problem
-                // must get the 'this.element.resistance' decrease here
-                this.element.resistance--;
-                if (this.element.resistance != 0) {
-                    this.printForm();
+                // must get the 'this.element.strength' decrease here
+                this.element.strength--;
+                if (this.element.strength != 0) {
+                    this.printObject();
                     return false;
                 }
                 break;
+            //case 4:
+                // inbreakable
+            //    return false;
+            //    break;
             default:
                 break;
         }
@@ -321,15 +327,14 @@ function containtBrickPosition(searchBrick) {
     return false;
 }
 
-// Objet chariot
+// Carriage Object
 function Carriage() {
     this.element = document.createElement('DIV');
     this.element.id = "carriage";
     this.element.className = "Carriage";
 
-    this.printForm = function () {
-        this.element.innerHTML = (graphismeImg) ? "<img src='img/palette.jpg'/>" : "".padEnd(10, "_");
-        if (this.doubleCarriage) this.element.innerHTML += this.element.innerHTML;
+    this.printObject = function () {
+        this.element.innerHTML = graphicalComponents.getCarriage(this.doubleCarriage, basculeTriche);
     };
 
     this.getSize = function () {
@@ -339,7 +344,7 @@ function Carriage() {
         };
     };
 
-    this.printForm();
+    this.printObject();
 
     this.deltaCarriage = 20;
     this.element.style.top = getScreenSize().y + "px";
@@ -359,7 +364,7 @@ function Carriage() {
         }
     };
 
-    this.moveTo = function (direction) {
+    this.moveTo = function (direction = MOVING_DIRECTION.NONE) {
         let tmpPosL = this.posCarriage + (this.getSize().x / 2) + (direction * this.deltaCarriage);
         this.move(tmpPosL);
     }
@@ -367,17 +372,40 @@ function Carriage() {
     this.triche = function () {
         basculeTriche = !basculeTriche;
         if (basculeTriche) {
-            this.element.innerHTML = "".padEnd(50,"_");
             this.element.style.left = "0px";
         }
-        else {
-            this.printForm();
-        }
+        this.printObject();
     };
 
     // ajouter le chariot au jeu
     divJeu.appendChild(this.element);
 }
+
+var graphicalComponents = {
+    isGraphic: true,
+    
+    switchGraphic : function (listObjects) {
+        graphicalComponents.isGraphic = !graphicalComponents.isGraphic;
+        listObjects.map(function(obj) { obj.printObjet() });
+    },
+
+    getCarriage : function (isDouble = false, tricks = false) {
+        if (tricks) return "".padEnd(50,"_");
+
+        let carriageGraph = (this.isGraphic) ? "<img src='img/palette.jpg'/>" : "".padEnd(10, "_");;
+        if(isDouble) carriageGraph += carriageGraph;
+        return carriageGraph;
+    },
+
+    getBrick: function(brickObj, tricks = false) {
+        let brickGraph = null;
+        return brickGraph;
+    },
+
+    getBall: function(ballObj) {
+        return null;
+    }
+};
 
 function Init() {
     deplScreen = getScreenSize();
@@ -414,13 +442,13 @@ function goBall() {
       objBall.move()
     });
 
-    // game over if nomore balls
-    if (tabBalls == null || tabBalls.length == 0) {
-        if (confirm("Game Over !\nStart a new part ?"))
-            document.location.reload();
-        else
-            return false;
-    }
+  // game over if nomore balls
+  if (tabBalls == null || tabBalls.length == 0) {
+    if (confirm("Game Over !\nStart a new part ?"))
+      document.location.reload();
+    else
+      return false;
+  }
 
     // restart game if nomore Bricks
     if (tabBricks == null || tabBricks.length == 0) {
@@ -460,21 +488,21 @@ function handlerKey(e) {
     else if (keyPress == 32) carriage.triche(); // espace
     else if (keyPress == 27 || (!isIE && e.code == 'Escape')) alert("Pause, v'la le chef !\nOK pour continuer ..."); // escape
     else if (keyPress == 66) { // 'B'
-        graphismeImg = !graphismeImg;
+        graphicalComponents.switchGraphic(tabBalls);
         // changer le graphisme des balles
         if (tabBalls == null) return false;
         for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++)
-            tabBalls[i].printForm();
+            tabBalls[i].printObject();
         // changer le graphisme des Bricks
         if (tabBricks == null) return false;
         for (var i = 0, tabBricksLen = tabBricks.length; i < tabBricksLen; i++)
-            tabBricks[i].printForm();
+            tabBricks[i].printObject();
         // changer le graphisme du chariot
-        carriage.printForm();
+        carriage.printObject();
     }
     else if (keyPress === 68) { // 'D'
         carriage.doubleCarriage = !carriage.doubleCarriage;
-        carriage.printForm();
+        carriage.printObject();
     }
     else if (keyPress >= 65) { // a partir de 'A'
         for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++)
