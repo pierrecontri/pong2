@@ -381,7 +381,8 @@ function Carriage() {
     divJeu.appendChild(this.element);
 }
 
-var graphicalComponents = {
+// this part can be consider as a singleton or uniq graphical helper object
+const graphicalComponents = {
     isGraphic: true,
     
     switchGraphic : function (listObjects) {
