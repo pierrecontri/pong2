@@ -48,6 +48,14 @@ img {
   height: 25px;
 }
 
+.brickImg.strength1 {
+  content:url('img/brokenBrique.jpg');
+}
+
+.brickImg.strength2 {
+  content:url('img/Brique.jpg');
+}
+
 TABLE {
   border: 2px solid black;
   border-collapse: collapse;

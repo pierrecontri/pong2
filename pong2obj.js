@@ -227,23 +227,16 @@ function Brick(numero) {
     this.element.id = "brick" + numero;
     this.element.name = "brick";
     this.element.className = "Brick";
-    this.element.strength = 1;
+    this.element.strength = 2;
     // type of Brick
     // 1) multiply balls
     // 2) double carriage
     // 3) Brick double strength
     // 4) unbreakable
     let brickType = Math.floor(5 * Math.random());
-    if (brickType == 3)
-        this.element.strength = 2;
 
     this.printObject = function () {
-        let isBrickBroken = (brickType == 3) && (this.element.strength == 1);
-        this.element.innerHTML = (graphismeImg) ?
-                                    ((!isBrickBroken) ? "<img class='brickImg' src='img/Brique.jpg'/>" :
-                                                         "<img class='brickImg' src='img/brokenBrique.jpg'/>") :
-                                    ((!isBrickBroken) ? "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
-                                                         "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
+        this.element.innerHTML = graphicalComponents.getBrick(this.element.strength);
     };
     this.printObject();
     // append brick to the game
@@ -398,9 +391,13 @@ const graphicalComponents = {
         return carriageGraph;
     },
 
-    getBrick: function(brickObj, tricks = false) {
-        let brickGraph = null;
-        return brickGraph;
+    getBrick: function(strength = 2) {
+        console.log(strength);
+        return (this.isGraphic) ?
+                  "<img class='brickImg' src='img/brick" + strength + ".jpg' />" :
+                  ((strength > 1) ? "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
+                                    "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
+
     },
 
     getBall: function(ballObj) {
