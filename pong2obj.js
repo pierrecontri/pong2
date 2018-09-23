@@ -29,12 +29,12 @@
 'use strict';
 
 // Declaration des objets du jeu
-// Variables globales pour le joueur
+// variables / constantes globales pour le joueur
 var nbBalls = 9;
-var nbBricks = 60;
-var deltadepl = 3; // pour toutes les balles
-var timeOutdepl = 5; // temps en millisecondes de boucle du jeu
-var isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
+const nbBricks = 60;
+const deltadepl = 3; // pour toutes les balles
+const timeOutdepl = 5; // temps en millisecondes de boucle du jeu
+const isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
 
 // Variables de la classe __main__
 var deplScreen = null;
@@ -51,6 +51,11 @@ const MOVING_DIRECTION = {
     'LEFT'  : -1,
     'RIGHT' : 1,
     'NONE'  : 0
+}
+
+const ORIENTAION = {
+    'HORIZONTAL': 'X',
+    'VERTICAL'  : 'Y'
 }
 
 // Redefinition de l'objet Array
@@ -79,50 +84,57 @@ function Ball(numero) {
     this.element.name = "ball";
     this.element.className = "Ball";
     this.printObject = function () {
-        this.element.innerHTML = (graphismeImg) ? "<img src='img/balle.jpg' style='width: 16px; height: 16px; border: 0px none;'/>" : "O";
+        this.element.innerHTML = graphicalComponents.getBall();
     };
     this.printObject();
 
     // randomisation du positionnement des balles
-    this.deplX = Math.floor((deplScreen.x) * Math.random());
-    this.deplY = Math.floor((deplScreen.y) * Math.random());
-    this.deplXPos = Math.floor(Math.random());
-    this.deplYPos = 0;
+    this.moving = {
+        x: Math.floor((deplScreen.x) * Math.random()),
+        y: Math.floor((deplScreen.y) * Math.random()),
+        xPos: Math.floor(Math.random()),
+        yPos: -1
+    };
 
     // placer la balle dans le jeu
     divJeu.appendChild(this.element);
 
     // methodes
-    // changer la balle de sens
-    this.changeBallSens = function (orientation) {
-        if (orientation == 'X')
-            this.deplXPos = !this.deplXPos;
+    // change the ball orientation
+    this.changeBallOrientation = function (orientation) {
+        if (orientation == ORIENTAION.HORIZONTAL)
+            this.moving.xPos *= -1;
         else
-            this.deplYPos = !this.deplYPos;
+            this.moving.yPos *= -1;
     };
 
     // rafraichissement de la balle (nouvelle position)
     this.refresh = function () {
-        this.element.style.left = this.deplX + "px";
-        this.element.style.top = this.deplY + "px";
+        this.element.style.left = this.moving.x + "px";
+        this.element.style.top = this.moving.y + "px";
     };
 
     // tester la balle pour savoir si elle fait encore partie de l'air de jeu
     this.isInArea = function () {
         // verifier que la balle tombe bien sur le chariot et qu'elle est presente sur le terrain
-        if ((this.deplY + deltadepl) >= deplScreen.y) {
+        if ((this.moving.y + deltadepl) >= deplScreen.y) {
             // sortir la balle du jeu ou pas
-            return (this.deplX >= carriage.posCarriage && this.deplX <= (carriage.posCarriage + (carriage.getSize().x)) || basculeTriche);
+            return (this.moving.x >= carriage.posCarriage
+                && this.moving.x <= (carriage.posCarriage + (carriage.getSize().x))
+                || basculeTriche);
         }
         return true;
     };
 
     // effacer la balle
     this.killBall = function () {
+        // graphical
         divJeu.removeChild(this.element);
+        // object (functionnal)
         tabBalls = tabBalls.remove(this);
+        // for the game
         nbBalls--;
-        // enlever la double palette si une balle se perd
+        // remove double cariage if the ball is lost
         if (carriage.doubleCarriage) {
             carriage.doubleCarriage = false;
             carriage.printObject();
@@ -139,7 +151,7 @@ function Ball(numero) {
             var intersect = intersectBallBrick(this, tmpBrick);
             if (intersect.breakBrick) {
                 tmpBrick.breakBrick();
-                this.changeBallSens(intersect.orientation);
+                this.changeBallOrientation(intersect.orientation);
                 breakB = true;
             }
         }
@@ -149,35 +161,22 @@ function Ball(numero) {
     // deplacement graphique de la balle
     this.move = function () {
         // horizontal
-        if (this.deplX + deltadepl < deplScreen.x && this.deplXPos) {
-            this.deplX += deltadepl;
-        }
-        else if (this.deplX <= 0) {
-            this.deplX += deltadepl;
-            this.deplXPos = 1;
-        }
-        else {
-            this.deplX -= deltadepl;
-            this.deplXPos = 0;
-        }
+        this.moving.xPos = ((this.moving.x + deltadepl < deplScreen.x && this.moving.xPos == 1)
+                            || this.moving.x <= 0)
+                        ? 1 : -1;
+            
+        this.moving.x += deltadepl * this.moving.xPos;
 
         // vertical
-        if (this.deplY + deltadepl < deplScreen.y && this.deplYPos) {
-            this.deplY += deltadepl;
-        }
-        else if (this.deplY <= 0) {
-            this.deplY += deltadepl;
-            this.deplYPos = 1;
-        }
-        else {
-            this.deplY -= deltadepl;
-            this.deplYPos = 0;
-        }
+        this.moving.yPos = ((this.moving.y + deltadepl < deplScreen.y && this.moving.yPos == 1)
+                            || this.moving.y <= 0)
+                        ? 1 : -1;
+
+        this.moving.y += deltadepl * this.moving.yPos;
 
         this.refresh();
 
-        // si la balle n'est pas dans l'air de jeu,
-        // la supprimer
+        // remove ball if not in game board
         if (!this.isInArea())
             this.killBall();
         else
@@ -189,8 +188,8 @@ function intersectBallBrick(tmpBall, tmpBrick) {
     var intersect = { breakBrick: false, orientation: 'X' };
 
     if (tmpBrick != null && tmpBall != null) {
-        var Xball = tmpBall.deplX + Math.floor(((isIE) ? tmpBall.element.offsetWidth : tmpBall.element.clientWidth) / 2);
-        var Yball = tmpBall.deplY + Math.floor(((isIE) ? tmpBall.element.offsetHeight : tmpBall.element.clientHeight) / 2);
+        var Xball = tmpBall.moving.x + Math.floor(((isIE) ? tmpBall.element.offsetWidth : tmpBall.element.clientWidth) / 2);
+        var Yball = tmpBall.moving.y + Math.floor(((isIE) ? tmpBall.element.offsetHeight : tmpBall.element.clientHeight) / 2);
 
         var X1Brick = tmpBrick.element.offsetLeft;
         var X2Brick = X1Brick + ((isIE) ? tmpBrick.element.offsetWidth : tmpBrick.element.clientWidth);
@@ -198,7 +197,7 @@ function intersectBallBrick(tmpBall, tmpBrick) {
         var Y1Brick = tmpBrick.element.offsetTop;
         var Y2Brick = Y1Brick + ((isIE) ? tmpBrick.element.offsetHeight : tmpBrick.element.clientHeight);
 
-        // prise en compte d'erreur de calcul processeur
+        // prise en compte d'erreur de precision de calcul
         if (((X1Brick <= Xball && Xball <= X2Brick) &&
             (Math.abs(Yball - Y2Brick) <= precisionErreur))
            ||
@@ -266,7 +265,7 @@ function Brick(numero) {
              && this.posRnd.y == tmpBrick.posRnd.y);
     };
 
-    // positionner la Brick sur le jeu à un endroit libre
+    // set the brick to a free place on the game board
     do {
         this.posRnd = this.getRandomPosition();
     } while (containtBrickPosition(this));
@@ -276,13 +275,9 @@ function Brick(numero) {
 
     // destruction of the brick
     this.breakBrick = function () {
-        // performances problem
-        //this.element.strength--;
         switch (brickType) {
             case 0:
-                var nbBallDem = 3;
-                //if (nbBalls < nbBallDem) nbBallDem = nbBalls;
-                nbBallDem = nbBallDem - tabBalls.length;
+                var nbBallDem = 3 - tabBalls.length;
                 for (var i = 0; i < nbBallDem; i++)
                     tabBalls.push(new Ball(tabBalls.length));
                 break;
@@ -292,8 +287,6 @@ function Brick(numero) {
                 break;
             case 3:
                 // double strength
-                // performances problem
-                // must get the 'this.element.strength' decrease here
                 this.element.strength--;
                 if (this.element.strength != 0) {
                     this.printObject();
@@ -400,8 +393,8 @@ const graphicalComponents = {
 
     },
 
-    getBall: function(ballObj) {
-        return null;
+    getBall: function() {
+        return (this.isGraphic) ? "<img class='ballImg' src='img/ball.jpg' />" : "O";
     }
 };
 

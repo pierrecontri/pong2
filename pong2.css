@@ -48,12 +48,10 @@ img {
   height: 25px;
 }
 
-.brickImg.strength1 {
-  content:url('img/brokenBrique.jpg');
-}
-
-.brickImg.strength2 {
-  content:url('img/Brique.jpg');
+.ballImg {
+  width: 16px;
+  height: 16px;
+  border: 0px none;
 }
 
 TABLE {
