@@ -134,7 +134,7 @@ function Ball(numero) {
         tabBalls = tabBalls.remove(this);
         // for the game
         nbBalls--;
-        // remove double cariage if the ball is lost
+        // remove double carriage if the ball is lost
         if (carriage.doubleCarriage) {
             carriage.doubleCarriage = false;
             carriage.printObject();
@@ -379,13 +379,12 @@ const graphicalComponents = {
     getCarriage : function (isDouble = false, tricks = false) {
         if (tricks) return "".padEnd(50,"_");
 
-        let carriageGraph = (this.isGraphic) ? "<img src='img/palette.jpg'/>" : "".padEnd(10, "_");;
+        let carriageGraph = (this.isGraphic) ? "<img src='img/burin.jpg'/>" : "".padEnd(10, "_");;
         if(isDouble) carriageGraph += carriageGraph;
         return carriageGraph;
     },
 
     getBrick: function(strength = 2) {
-        console.log(strength);
         return (this.isGraphic) ?
                   "<img class='brickImg' src='img/brick" + strength + ".jpg' />" :
                   ((strength > 1) ? "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
@@ -394,34 +393,33 @@ const graphicalComponents = {
     },
 
     getBall: function() {
-        return (this.isGraphic) ? "<img class='ballImg' src='img/ball.jpg' />" : "O";
+        return (this.isGraphic) ? "<img class='ballImg' src='img/pierre_ronde.jpg' />" : "O";
     }
 };
 
 function Init() {
     deplScreen = getScreenSize();
-    console.log(deplScreen);
     divJeu = document.getElementById("game");
     if (!divJeu) return false;
 
-    // Creer le chariot
+    // instanciate carriage
     carriage = new Carriage();
 
-    // Creation d'une balle
+    // instanciate first ball
     tabBalls = new Array();
     tabBalls.push(new Ball(0));
 
-    // Initialisation des Bricks
+    // instanciate bricks
     tabBricks = new Array();
     for (var i = 0; i < nbBricks; i++)
         tabBricks.push(new Brick(i));
 
-    // gestion clavier et sourris
+    // keyboard and mouse management
     document.onkeypress = handlerKey;
-    document.onkeydown = movCarriageByKeyboard;
-    document.onmousemove = movCarriageByMouse;
+    document.onkeydown = moveCarriageByKeyboard();
+    document.onmousemove = moveCarriageByMouse();
 
-    // lancement du jeu
+    // start game
     setTimeout('goBall()', timeOutdepl);
     return true;
 }
@@ -441,15 +439,15 @@ function goBall() {
       return false;
   }
 
-    // restart game if nomore Bricks
-    if (tabBricks == null || tabBricks.length == 0) {
-        if (confirm("Congratulations !\nStart a new part ?"))
-            document.location.reload();
-        else
-            return false;
-    }
+  // restart game if nomore Bricks
+  if (tabBricks == null || tabBricks.length == 0) {
+    if (confirm("Congratulations !\nStart a new part ?"))
+      document.location.reload();
+    else
+      return false;
+  }
 
-    setTimeout('goBall()', timeOutdepl);
+  setTimeout('goBall()', timeOutdepl);
 }
 
 function handlerKey(e) {
@@ -502,8 +500,10 @@ function handlerKey(e) {
     return true;
 }
 
-function movCarriageByKeyboard(e) {
-    switch ((isIE) ? event.keyCode : e.which) {
+function moveCarriageByKeyboard() {
+
+  var moveCarriage = function (keyCode) {
+    switch (keyCode) {
         case 37:  //deplacement vers la gauche
             carriage.moveTo(MOVING_DIRECTION.LEFT);
             break;
@@ -514,13 +514,22 @@ function movCarriageByKeyboard(e) {
             carriage.deltaCarriage++;
             break;
         case 40: // descelleration du deplacement chariot
-            if (carriage.deltaCarriage > 1) carriage.deltaCarriage--;
+            if (carriage.deltaCarriage > 2) carriage.deltaCarriage--;
             break;
         default: // ne rien faire
             break;
     }
+  }
+
+  return (isIE) ? function (e) { moveCarriage(event.keyCode); }
+                : function (e) { moveCarriage(e.which); }
+    
 }
 
-function movCarriageByMouse(e) {
-    carriage.move((isIE) ? event.x : e.clientX);
+function moveCarriageByMouse() {
+
+  var moveCarriage = (isIE) ? function (evt) { carriage.move(event.x); }
+                            : function (evt) { carriage.move(evt.clientX); };
+
+  return moveCarriage;
 }

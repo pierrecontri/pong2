@@ -134,33 +134,45 @@ function getRandomPosition(objectSize, areaSize) {
   return tmpPos;
 };
 
-// events mouse & keyboard
-
-function movCarriageByKeyboard(e) {
-  switch ((properties.isIE) ? event.keyCode : e.which) {
-      case 37:  //deplacement vers la gauche
-          carriage.moveLeft();
-          break;
-      case 39: //deplacement vers la droite
-          carriage.moveRight();
-          break;
-      case 38: //acceleration du deplacement chariot
-          carriage.deltaCarriage++;
-          break;
-      case 40: // descelleration du deplacement chariot
-          if (carriage.deltaCarriage > 1) carriage.deltaCarriage--;
-          break;
-      default: // ne rien faire
-          break;
-  }
-}
 
 var mainCarriage = null;
 
-function movCarriageByMouse(e) {
-  mainCarriage.move((properties.isIE) ? event.x : e.clientX);
+// events mouse & keyboard
+
+function moveCarriageByKeyboard() {
+
+  var moveCarriage = function (keyCode) {
+    switch (keyCode) {
+        case 37:  //deplacement vers la gauche
+            carriage.moveTo(MOVING_DIRECTION.LEFT);
+            break;
+        case 39: //deplacement vers la droite
+            carriage.moveTo(MOVING_DIRECTION.RIGHT);
+            break;
+        case 38: //acceleration du deplacement chariot
+            carriage.deltaCarriage++;
+            break;
+        case 40: // descelleration du deplacement chariot
+            if (carriage.deltaCarriage > 2) carriage.deltaCarriage--;
+            break;
+        default: // ne rien faire
+            break;
+    }
+  }
+
+  return (properties.isIE)
+              ? function (e) { moveCarriage(event.keyCode); }
+              : function (e) { moveCarriage(e.which); };
 }
 
+function moveCarriageByMouse() {
+
+  var moveCarriage = (properties.isIE)
+                        ? function (e) { carriage.move(event.x); }
+                        : function (e) { carriage.move(e.clientX); };
+
+  return moveCarriage;
+}
 
 
 // unit test
