@@ -246,6 +246,8 @@ function Brick(numero) {
         y: (isIE) ? this.element.offsetHeight : this.element.clientHeight
     };
 
+
+// this part has to be exported
     this.getRandomPosition = function () {
         // positionnement aleatoire sur la grille
         let tmpPos = {
@@ -254,24 +256,26 @@ function Brick(numero) {
         };
 
         // alignement sur une grille virtuelle
-        tmpPos.x = Math.floor(tmpPos.x / this.size.x) * this.size.x;
-        tmpPos.y = Math.floor(tmpPos.y / this.size.y) * this.size.y;
-
-        return tmpPos;
+        return {
+          x: Math.floor(tmpPos.x / this.size.x) * this.size.x,
+          y: Math.floor(tmpPos.y / this.size.y) * this.size.y
+        };
     };
 
     this.isEqualPosition = function (tmpBrick) {
-        return (this.posRnd.x == tmpBrick.posRnd.x 
-             && this.posRnd.y == tmpBrick.posRnd.y);
+        return (this.position.x == tmpBrick.position.x 
+             && this.position.y == tmpBrick.position.y);
     };
 
     // set the brick to a free place on the game board
     do {
-        this.posRnd = this.getRandomPosition();
+        this.position = this.getRandomPosition();
     } while (containtBrickPosition(this));
 
-    this.element.style.left = this.posRnd.x + "px";
-    this.element.style.top = this.posRnd.y + "px";
+    this.element.style.left = this.position.x + "px";
+    this.element.style.top = this.position.y + "px";
+// out of part to change
+
 
     // destruction of the brick
     this.breakBrick = function () {
@@ -373,7 +377,7 @@ const graphicalComponents = {
     
     switchGraphic : function (listObjects) {
         graphicalComponents.isGraphic = !graphicalComponents.isGraphic;
-        listObjects.map(function(obj) { obj.printObjet() });
+        listObjects.map(function(obj) { obj.printObject() });
     },
 
     getCarriage : function (isDouble = false, tricks = false) {
@@ -459,10 +463,7 @@ function handlerKey(e) {
     else if (keyPress == 47 && deltadepl > 1) deltadepl--;
     else if (keyPress == 48) {
         for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++) {
-            if (tabBalls[i].element.innerHTML == "o")
-                tabBalls[i].element.innerHTML = "O";
-            else
-                tabBalls[i].element.innerHTML = "o";
+            tabBalls[i].element.innerHTML = (tabBalls[i].element.innerHTML == "o") ? "O" : "o";
         }
     }
     else if ((keyPress >= 49 && keyPress <= 57) ||
