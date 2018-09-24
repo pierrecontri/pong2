@@ -281,8 +281,8 @@ function Brick(numero) {
     this.breakBrick = function () {
         switch (brickType) {
             case 0:
-                var nbBallDem = 3 - tabBalls.length;
-                for (var i = 0; i < nbBallDem; i++)
+                let nbBallDem = 3 - tabBalls.length;
+                for (let i = 0; i < nbBallDem; i++)
                     tabBalls.push(new Ball(tabBalls.length));
                 break;
             case 1:
