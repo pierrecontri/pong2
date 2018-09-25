@@ -70,8 +70,8 @@ Array.prototype.remove = function (obj) {
 
 function getScreenSize() {
     return {
-        x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - 40,
-        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - 30
+        x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - 50,
+        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - 45
     };
 }
 
@@ -274,7 +274,9 @@ function Brick(numero) {
 
     this.element.style.left = this.position.x + "px";
     this.element.style.top = this.position.y + "px";
-// out of part to change
+
+
+    // out of part to change
 
 
     // destruction of the brick
@@ -374,30 +376,45 @@ function Carriage() {
 // this part can be consider as a singleton or uniq graphical helper object
 const graphicalComponents = {
     isGraphic: true,
+    graphicName: "tennis",
     
-    switchGraphic : function (listObjects) {
+    switchGraphic : function () {
         graphicalComponents.isGraphic = !graphicalComponents.isGraphic;
-        listObjects.map(function(obj) { obj.printObject() });
     },
 
     getCarriage : function (isDouble = false, tricks = false) {
         if (tricks) return "".padEnd(50,"_");
 
-        let carriageGraph = (this.isGraphic) ? "<img src='img/burin.jpg'/>" : "".padEnd(10, "_");;
+        let carriageGraph = (this.isGraphic) ? "<img src='img/" + this.graphicName + "_carriage.jpg'/>" : "".padEnd(10, "_");;
         if(isDouble) carriageGraph += carriageGraph;
         return carriageGraph;
     },
 
     getBrick: function(strength = 2) {
         return (this.isGraphic) ?
-                  "<img class='brickImg' src='img/brick" + strength + ".jpg' />" :
+                  "<img class='brickImg' src='img/" + this.graphicName + "_brick" + strength + ".jpg' />" :
                   ((strength > 1) ? "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
                                     "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
 
     },
 
     getBall: function() {
-        return (this.isGraphic) ? "<img class='ballImg' src='img/pierre_ronde.jpg' />" : "O";
+        return (this.isGraphic) ? "<img class='ballImg' src='img/" + this.graphicName + "_ball.jpg' />" : "O";
+    },
+/*
+        // change the ball graph
+        if (tabBalls == null) return false;
+        for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++)
+            tabBalls[i].printObject();
+        // changer le graphisme des Bricks
+        if (tabBricks == null) return false;
+        for (var i = 0, tabBricksLen = tabBricks.length; i < tabBricksLen; i++)
+            tabBricks[i].printObject();
+        // changer le graphisme du chariot
+        carriage.printObject();
+*/
+    refreshObjects: function(listObjects) {
+        listObjects.map(function(obj) { obj.printObject() });
     }
 };
 
@@ -478,17 +495,16 @@ function handlerKey(e) {
     else if (keyPress == 32) carriage.triche(); // espace
     else if (keyPress == 27 || (!isIE && e.code == 'Escape')) alert("Pause, v'la le chef !\nOK pour continuer ..."); // escape
     else if (keyPress == 66) { // 'B'
-        graphicalComponents.switchGraphic(tabBalls);
-        // changer le graphisme des balles
-        if (tabBalls == null) return false;
-        for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++)
-            tabBalls[i].printObject();
-        // changer le graphisme des Bricks
-        if (tabBricks == null) return false;
-        for (var i = 0, tabBricksLen = tabBricks.length; i < tabBricksLen; i++)
-            tabBricks[i].printObject();
-        // changer le graphisme du chariot
-        carriage.printObject();
+      graphicalComponents.switchGraphic(tabBalls);
+      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, [carriage]));
+    }
+    else if (keyPress == 67) { // 'C'
+      graphicalComponents.graphicName = 'construction';
+      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, [carriage]));
+    }
+    else if (keyPress == 84) { // 'T'
+      graphicalComponents.graphicName = 'tennis';
+      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, [carriage]));
     }
     else if (keyPress === 68) { // 'D'
         carriage.doubleCarriage = !carriage.doubleCarriage;
