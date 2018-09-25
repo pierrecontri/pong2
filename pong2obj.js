@@ -1,30 +1,31 @@
-/* ** ------------------------------------------------------ ** */
-/* ** --          PONG 2                                  -- ** */
-/* ** ------------------------------------------------------ ** */
-/* ** -- Auteur      :  Pierre Contri                     -- ** */
-/* ** -- Cree le     :  07/06/2006                        -- ** */
-/* ** -- Modifie le  :  24/12/2008                        -- ** */
-/* ** -- Update3 le  :  26/07/2015                        -- ** */
-/* ** ------------------------------------------------------ ** */
-/* ** -- Version 1.0 :  deplacement chariot et balle      -- ** */
-/* ** -- Version 1.1 :  pause plus grossissement balle    -- ** */
-/* ** -- Version 1.2 :  trois balles                      -- ** */
-/* ** -- Version 1.3 :  debut de gestion de la souris     -- ** */
-/* ** -- Version 1.4 :  creation des Bricks              -- ** */
-/* ** -- Version 1.5 :  gestion des Bricks               -- ** */
-/* ** -- Version 2.0 :  code de qualite                   -- ** */
-/* ** -- Version 2.1 :  passage en code objet             -- ** */
-/* ** -- Version 2.2 :  simplification sur objets         -- ** */
-/* ** -- Version 2.3 :  compatibilite FireFox             -- ** */
-/* ** -- Version 2.4 :  simplification du code            -- ** */
-/* ** -- Version 2.5 :  alignement des Bricks sur grille -- ** */
-/* ** -- Version 2.6 :  acceleration calculs              -- ** */
-/* ** -- Version 2.7 :  pouvoirs sur Bricks              -- ** */
-/* ** -- Version 2.8 :  reduction du code                 -- ** */
-/* ** -- Version 2.9 :  correction interpreteur JavaScr   -- ** */
-/* ** -- Version 3.0 :  amelioration qualite code         -- ** */
-/* ** -- Version 3.1 :  Brick with double strength     -- ** */
-/* ** ------------------------------------------------------ ** */
+/* ** ------------------------------------------------------- ** */
+/* ** --          PONG 2                                   -- ** */
+/* ** ------------------------------------------------------- ** */
+/* ** -- Author      :  Pierre Contri                      -- ** */
+/* ** -- Created     :  07/06/2006                         -- ** */
+/* ** -- Updated     :  25/09/2018                         -- ** */
+/* ** ------------------------------------------------------- ** */
+/* ** -- Version 1.0 :  deplacement chariot et balle       -- ** */
+/* ** -- Version 1.1 :  pause plus grossissement balle     -- ** */
+/* ** -- Version 1.2 :  trois balles                       -- ** */
+/* ** -- Version 1.3 :  debut de gestion de la souris      -- ** */
+/* ** -- Version 1.4 :  creation des Bricks                -- ** */
+/* ** -- Version 1.5 :  gestion des Bricks                 -- ** */
+/* ** -- Version 2.0 :  code de qualite                    -- ** */
+/* ** -- Version 2.1 :  passage en code objet              -- ** */
+/* ** -- Version 2.2 :  simplification sur objets          -- ** */
+/* ** -- Version 2.3 :  compatibilite FireFox              -- ** */
+/* ** -- Version 2.4 :  simplification du code             -- ** */
+/* ** -- Version 2.5 :  alignement des Bricks sur grille   -- ** */
+/* ** -- Version 2.6 :  acceleration calculs               -- ** */
+/* ** -- Version 2.7 :  pouvoirs sur Bricks                -- ** */
+/* ** -- Version 2.8 :  reduction du code                  -- ** */
+/* ** -- Version 2.9 :  correction interpreteur JavaScr    -- ** */
+/* ** -- Version 3.0 :  amelioration qualite code          -- ** */
+/* ** -- Version 3.1 :  Brick with double strength         -- ** */
+/* ** -- Version 3.2 :  Strict JavScript                   -- ** */
+/* ** -- Version 3.3 :  Update code, ready for functionnal -- ** */
+/* ** ------------------------------------------------------- ** */
 
 'use strict';
 
@@ -38,7 +39,7 @@ const isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anc
 
 // Variables de la classe __main__
 var deplScreen = null;
-var basculeTriche = false;
+var switchCheated = false;
 var precisionErreur = 1;
 var graphismeImg = true;
 
@@ -121,7 +122,7 @@ function Ball(numero) {
             // sortir la balle du jeu ou pas
             return (this.moving.x >= carriage.posCarriage
                 && this.moving.x <= (carriage.posCarriage + (carriage.getSize().x))
-                || basculeTriche);
+                || switchCheated);
         }
         return true;
     };
@@ -282,25 +283,23 @@ function Brick(numero) {
     // destruction of the brick
     this.breakBrick = function () {
         switch (brickType) {
-            case 0:
+            case 0: // triple balls
                 let nbBallDem = 3 - tabBalls.length;
                 for (let i = 0; i < nbBallDem; i++)
                     tabBalls.push(new Ball(tabBalls.length));
                 break;
-            case 1:
+            case 1: // double carriage
                 carriage.doubleCarriage = true;
                 carriage.printObject();
                 break;
-            case 3:
-                // double strength
+            case 3: // double strength
                 this.element.strength--;
                 if (this.element.strength != 0) {
                     this.printObject();
                     return false;
                 }
                 break;
-            //case 4:
-                // inbreakable
+            //case 4: // inbreakable
             //    return false;
             //    break;
             default:
@@ -313,10 +312,9 @@ function Brick(numero) {
 }
 
 function containtBrickPosition(searchBrick) {
-    for (var i = 0, tabBricksLength = tabBricks.length; i < tabBricksLength; i++) {
-        if (searchBrick.isEqualPosition(tabBricks[i])) return true;
-    }
-    return false;
+    return tabBricks.find(
+                objBrick => searchBrick.isEqualPosition(objBrick)
+            ) == "undefined";
 }
 
 // Carriage Object
@@ -326,15 +324,25 @@ function Carriage() {
     this.element.className = "Carriage";
 
     this.printObject = function () {
-        this.element.innerHTML = graphicalComponents.getCarriage(this.doubleCarriage, basculeTriche);
+        this.element.innerHTML = graphicalComponents.getCarriage(this.doubleCarriage, switchCheated);
     };
 
-    this.getSize = function () {
+    this.ie_getSize = function () {
+      return {
+        x: this.element.offsetWidth,
+        y: this.element.offsetHeight
+      };
+    };
+
+    this.moz_getSize = function () {
         return {
-            x: (isIE) ? this.element.offsetWidth : this.element.clientWidth,
-            y: (isIE) ? this.element.offsetHeight : this.element.clientHeight
+            x: this.element.clientWidth,
+            y: this.element.clientHeight
         };
     };
+
+    this.getSize = (isIE) ? this.ie_getSize
+                          : this.moz_getSize;
 
     this.printObject();
 
@@ -347,7 +355,7 @@ function Carriage() {
     this.move = function (newPosition) {
         let carriageSize = this.getSize().x;
 
-        if (!basculeTriche
+        if (!switchCheated
             && (newPosition - (carriageSize / 2)) > 0
             && (newPosition + (carriageSize / 2)) <= deplScreen.x) {
 
@@ -361,15 +369,15 @@ function Carriage() {
         this.move(tmpPosL);
     }
 
-    this.triche = function () {
-        basculeTriche = !basculeTriche;
-        if (basculeTriche) {
+    this.cheated = function () {
+        switchCheated = !switchCheated;
+        if (switchCheated) {
             this.element.style.left = "0px";
         }
         this.printObject();
     };
 
-    // ajouter le chariot au jeu
+    // add carriage to the board
     divJeu.appendChild(this.element);
 }
 
@@ -401,20 +409,9 @@ const graphicalComponents = {
     getBall: function() {
         return (this.isGraphic) ? "<img class='ballImg' src='img/" + this.graphicName + "_ball.jpg' />" : "O";
     },
-/*
-        // change the ball graph
-        if (tabBalls == null) return false;
-        for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++)
-            tabBalls[i].printObject();
-        // changer le graphisme des Bricks
-        if (tabBricks == null) return false;
-        for (var i = 0, tabBricksLen = tabBricks.length; i < tabBricksLen; i++)
-            tabBricks[i].printObject();
-        // changer le graphisme du chariot
-        carriage.printObject();
-*/
+
     refreshObjects: function(listObjects) {
-        listObjects.map(function(obj) { obj.printObject() });
+        listObjects.map(obj => obj.printObject());
     }
 };
 
@@ -447,10 +444,7 @@ function Init() {
 
 function goBall() {
   // move balls
-  tabBalls.map(
-    function(objBall) {
-      objBall.move()
-    });
+  tabBalls.map(objBall => objBall.move());
 
   // game over if nomore balls
   if (tabBalls == null || tabBalls.length == 0) {
@@ -484,35 +478,35 @@ function handlerKey(e) {
         }
     }
     else if ((keyPress >= 49 && keyPress <= 57) ||
-			(keyPress >= 96 && keyPress <= 105)) { // de 1 a 9
-        // nombre de balles tappees au clavier
+			(keyPress >= 96 && keyPress <= 105)) { // from 1 to 9
+        // enter the ball number with keyboard
         var nbBallDem = String.fromCharCode(keyPress);
+        // check if there is enough
         if (nbBalls < nbBallDem) nbBallDem = nbBalls;
         nbBallDem = nbBallDem - tabBalls.length;
-        for (var i = 0; i < nbBallDem; i++)
+        for (let i = 0; i < nbBallDem; i++)
             tabBalls.push(new Ball(tabBalls.length));
     }
-    else if (keyPress == 32) carriage.triche(); // espace
+    else if (keyPress == 32) carriage.cheated(); // space
     else if (keyPress == 27 || (!isIE && e.code == 'Escape')) alert("Pause, v'la le chef !\nOK pour continuer ..."); // escape
     else if (keyPress == 66) { // 'B'
       graphicalComponents.switchGraphic(tabBalls);
-      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, [carriage]));
+      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, carriage));
     }
     else if (keyPress == 67) { // 'C'
       graphicalComponents.graphicName = 'construction';
-      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, [carriage]));
+      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, carriage));
     }
     else if (keyPress == 84) { // 'T'
       graphicalComponents.graphicName = 'tennis';
-      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, [carriage]));
+      graphicalComponents.refreshObjects(Array.concat(tabBalls, tabBricks, carriage));
     }
     else if (keyPress === 68) { // 'D'
         carriage.doubleCarriage = !carriage.doubleCarriage;
         carriage.printObject();
     }
     else if (keyPress >= 65) { // a partir de 'A'
-        for (var i = 0, tabBallsLen = tabBalls.length; i < tabBallsLen; i++)
-            tabBalls[i].element.innerHTML = String.fromCharCode(keyPress);
+        tabBalls.map(objBal => objBal.element.innerHTML = String.fromCharCode(keyPress));
     }
     return true;
 }
@@ -521,19 +515,19 @@ function moveCarriageByKeyboard() {
 
   var moveCarriage = function (keyCode) {
     switch (keyCode) {
-        case 37:  //deplacement vers la gauche
+        case 37:  // move to the left
             carriage.moveTo(MOVING_DIRECTION.LEFT);
             break;
-        case 39: //deplacement vers la droite
+        case 39: // move to the right
             carriage.moveTo(MOVING_DIRECTION.RIGHT);
             break;
-        case 38: //acceleration du deplacement chariot
+        case 38: // carriage acceleration
             carriage.deltaCarriage++;
             break;
-        case 40: // descelleration du deplacement chariot
+        case 40: // carriage descelleration
             if (carriage.deltaCarriage > 2) carriage.deltaCarriage--;
             break;
-        default: // ne rien faire
+        default: // nothing to do
             break;
     }
   }
