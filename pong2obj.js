@@ -32,10 +32,12 @@
 // Declaration des objets du jeu
 // variables / constantes globales pour le joueur
 var nbBalls = 9;
-const nbBricks = 60;
-const deltadepl = 3; // pour toutes les balles
-const timeOutdepl = 5; // temps en millisecondes de boucle du jeu
-const isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
+const properties = {
+    nbBricks    : 60,
+    deltadepl   : 3, // pour toutes les balles
+    timeOutdepl : 5, // temps en millisecondes de boucle du jeu
+    isIE        : (window.event) ? 1 : 0 // verification du navigateur (pour les anciens IE6 / Netscape 4)isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
+};
 
 // Variables de la classe __main__
 var deplScreen = null;
@@ -120,7 +122,7 @@ function Ball(numero) {
     // tester la balle pour savoir si elle fait encore partie de l'air de jeu
     this.isInArea = function () {
         // check the ball if follow on carriage and in game area
-        if ((this.moving.y + deltadepl) >= deplScreen.y) {
+        if ((this.moving.y + properties.deltadepl) >= deplScreen.y) {
             // exit ball if needed
             return (this.moving.x >= gameComponents.carriage.posCarriage
                 && this.moving.x <= (gameComponents.carriage.posCarriage + (gameComponents.carriage.getSize().x))
@@ -164,18 +166,18 @@ function Ball(numero) {
     // move the ball
     this.move = function () {
         // horizontal
-        this.moving.xPos = ((this.moving.x + deltadepl < deplScreen.x && this.moving.xPos == 1)
+        this.moving.xPos = ((this.moving.x + properties.deltadepl < deplScreen.x && this.moving.xPos == 1)
                             || this.moving.x <= 0)
                         ? 1 : -1;
             
-        this.moving.x += deltadepl * this.moving.xPos;
+        this.moving.x += properties.deltadepl * this.moving.xPos;
 
         // vertical
-        this.moving.yPos = ((this.moving.y + deltadepl < deplScreen.y && this.moving.yPos == 1)
+        this.moving.yPos = ((this.moving.y + properties.deltadepl < deplScreen.y && this.moving.yPos == 1)
                             || this.moving.y <= 0)
                         ? 1 : -1;
 
-        this.moving.y += deltadepl * this.moving.yPos;
+        this.moving.y += properties.deltadepl * this.moving.yPos;
 
         this.refresh();
 
@@ -191,14 +193,14 @@ function intersectBallBrick(tmpBall, tmpBrick) {
     var intersect = { breakBrick: false, orientation: 'X' };
 
     if (tmpBrick != null && tmpBall != null) {
-        var Xball = tmpBall.moving.x + Math.floor(((isIE) ? tmpBall.element.offsetWidth : tmpBall.element.clientWidth) / 2);
-        var Yball = tmpBall.moving.y + Math.floor(((isIE) ? tmpBall.element.offsetHeight : tmpBall.element.clientHeight) / 2);
+        var Xball = tmpBall.moving.x + Math.floor(((properties.isIE) ? tmpBall.element.offsetWidth : tmpBall.element.clientWidth) / 2);
+        var Yball = tmpBall.moving.y + Math.floor(((properties.isIE) ? tmpBall.element.offsetHeight : tmpBall.element.clientHeight) / 2);
 
         var X1Brick = tmpBrick.element.offsetLeft;
-        var X2Brick = X1Brick + ((isIE) ? tmpBrick.element.offsetWidth : tmpBrick.element.clientWidth);
+        var X2Brick = X1Brick + ((properties.isIE) ? tmpBrick.element.offsetWidth : tmpBrick.element.clientWidth);
 
         var Y1Brick = tmpBrick.element.offsetTop;
-        var Y2Brick = Y1Brick + ((isIE) ? tmpBrick.element.offsetHeight : tmpBrick.element.clientHeight);
+        var Y2Brick = Y1Brick + ((properties.isIE) ? tmpBrick.element.offsetHeight : tmpBrick.element.clientHeight);
 
         // prise en compte d'erreur de precision de calcul
         if (((X1Brick <= Xball && Xball <= X2Brick) &&
@@ -244,11 +246,9 @@ function Brick(numero) {
     // append brick to the game
     gameComponents.divJeu.appendChild(this.element);
 
-    this.size = {
-        x: (isIE) ? this.element.offsetWidth : this.element.clientWidth,
-        y: (isIE) ? this.element.offsetHeight : this.element.clientHeight
-    };
-
+    this.getSize = (properties.isIE) 
+                    ? function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; }
+                    : function () { return {x: this.element.clientWidth, y: this.element.clientHeight}; };
 
 // this part has to be exported
     this.getRandomPosition = function () {
@@ -259,9 +259,10 @@ function Brick(numero) {
         };
 
         // alignement sur une grille virtuelle
+        let objSize = this.getSize();
         return {
-          x: Math.floor(tmpPos.x / this.size.x) * this.size.x,
-          y: Math.floor(tmpPos.y / this.size.y) * this.size.y
+          x: Math.floor(tmpPos.x / objSize.x) * objSize.x,
+          y: Math.floor(tmpPos.y / objSize.y) * objSize.y
         };
     };
 
@@ -355,7 +356,7 @@ function Carriage() {
         };
     };
 
-    this.getSize = (isIE) ? this.ie_getSize
+    this.getSize = (properties.isIE) ? this.ie_getSize
                           : this.moz_getSize;
 
     this.move = function (newPosition) {
@@ -436,7 +437,7 @@ function Init() {
 
     // instanciate bricks
     gameComponents.tabBricks = new Array();
-    for (var i = 0; i < nbBricks; i++)
+    for (var i = 0; i < properties.nbBricks; i++)
         gameComponents.tabBricks.push(new Brick(i));
 
     // keyboard and mouse management
@@ -448,7 +449,7 @@ function Init() {
     graphicalComponents.refreshObjects('tennis');
 
     // start game
-    setTimeout('goBall()', timeOutdepl);
+    setTimeout('goBall()', properties.timeOutdepl);
     return true;
 }
 
@@ -472,16 +473,16 @@ function goBall() {
       return false;
   }
 
-  setTimeout('goBall()', timeOutdepl);
+  setTimeout('goBall()', properties.timeOutdepl);
 }
 
 function handlerKey(e) {
-    var keyPress = (isIE) ? event.keyCode : e.which;
+    var keyPress = (properties.isIE) ? event.keyCode : e.which;
 
-    if (keyPress == 43 && timeOutdepl > 1) timeOutdepl--;
-    else if (keyPress == 45) timeOutdepl++;
-    else if (keyPress == 42) deltadepl++;
-    else if (keyPress == 47 && deltadepl > 1) deltadepl--;
+    if (keyPress == 43 && properties.timeOutdepl > 1) properties.timeOutdepl--;
+    else if (keyPress == 45) properties.timeOutdepl++;
+    else if (keyPress == 42) properties.deltadepl++;
+    else if (keyPress == 47 && properties.deltadepl > 1) properties.deltadepl--;
     else if (keyPress == 48) {
         for (var i = 0, tabBallsLen = gameComponents.tabBalls.length; i < tabBallsLen; i++) {
             gameComponents.tabBalls[i].element.innerHTML = (gameComponents.tabBalls[i].element.innerHTML == "o") ? "O" : "o";
@@ -498,7 +499,7 @@ function handlerKey(e) {
         gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
     }
     else if (keyPress == 32) gameComponents.carriage.cheated(); // space
-    else if (keyPress == 27 || (!isIE && e.code == 'Escape')) alert("Pause, v'la le chef !\nOK pour continuer ..."); // escape
+    else if (keyPress == 27 || (!properties.isIE && e.code == 'Escape')) alert("Pause, v'la le chef !\nOK pour continuer ..."); // escape
     else if (keyPress == 66) { // 'B'
       graphicalComponents.switchGraphic(gameComponents.tabBalls);
       graphicalComponents.refreshObjects();
@@ -543,14 +544,14 @@ function moveCarriageByKeyboard() {
     }
   }
 
-  return (isIE) ? function (e) { moveCarriage(event.keyCode); }
+  return (properties.isIE) ? function (e) { moveCarriage(event.keyCode); }
                 : function (e) { moveCarriage(e.which); }
     
 }
 
 function moveCarriageByMouse() {
 
-  var moveCarriage = (isIE) ? function (evt) { gameComponents.carriage.move(event.x); }
+  var moveCarriage = (properties.isIE) ? function (evt) { gameComponents.carriage.move(event.x); }
                             : function (evt) { gameComponents.carriage.move(evt.clientX); };
 
   return moveCarriage;
