@@ -76,7 +76,7 @@ Array.prototype.remove = function (obj) {
 function getScreenSize() {
     return {
         x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - 50,
-        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - 20
+        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - 10
     };
 }
 
@@ -400,7 +400,7 @@ const graphicalComponents = {
     getCarriage : function (isDouble = false, tricks = false) {
         if (tricks) return "".padEnd(50,"_");
 
-        let carriageGraph = (this.isGraphic) ? "<img src='img/" + this.graphicName + "_carriage.jpg'/>" : "".padEnd(10, "_");;
+        let carriageGraph = (this.isGraphic) ? "<img src='img/" + this.graphicName + "_carriage.jpg' onload='gameComponents.carriage.refresh();'/>" : "".padEnd(10, "_");;
         if(isDouble) carriageGraph += carriageGraph;
         return carriageGraph;
     },
