@@ -35,21 +35,21 @@ function graphicalObject(objectName, objectNumber, initialPosition = { x: 0, y: 
   this.position = initialPosition;
 
   this.coordinates = function() {
-    let tmpSize = this.size();
+    let tmpSize = this.getSize();
     return {
       x1: this.position.x,
       y1: this.position.y,
       x2: this.position.x + tmpSize.x,
       y2: this.position.y + tmpSize.y
     };
-  }
+  };
 
-  this.size = function() {
+  this.getSize = function() {
     return {
       x: (properties.isIE) ? this.element.offsetWidth : this.element.clientWidth,
       y: (properties.isIE) ? this.element.offsetHeight : this.element.clientHeight
-    }
-  }
+    };
+  };
 }
 
 // ball

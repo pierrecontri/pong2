@@ -46,7 +46,7 @@ var precisionErreur = 1;
 var graphismeImg = true;
 
 const gameComponents = {
-    divJeu: null,
+    gameDiv: null,
     tabBalls: null,
     tabBricks: null,
     carriage: null
@@ -101,8 +101,30 @@ function Ball(numero) {
         yPos: -1
     };
 
+    this.getSize = (properties.isIE) 
+                    ? function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; }
+                    : function () { return {x: this.element.clientWidth, y: this.element.clientHeight}; };
+
+    this.getCenterCoordinates = function() {
+        let sizeBall = this.getSize();
+        return {
+            x: this.moving.x + (sizeBall.x / 2),
+            y: this.moving.y + (sizeBall.y / 2)
+        };
+    };
+
+    this.getCoordinates = function() {
+        let tmpSize = this.getSize();
+        return {
+          x1: this.moving.x,
+          y1: this.moving.y,
+          x2: this.moving.x + tmpSize.x,
+          y2: this.moving.y + tmpSize.y
+        };
+    };
+
     // placer la balle dans le jeu
-    gameComponents.divJeu.appendChild(this.element);
+    gameComponents.gameDiv.appendChild(this.element);
 
     // methodes
     // change the ball orientation
@@ -122,7 +144,7 @@ function Ball(numero) {
     // tester la balle pour savoir si elle fait encore partie de l'air de jeu
     this.isInArea = function () {
         // check the ball if follow on carriage and in game area
-        if ((this.moving.y + properties.deltadepl) >= deplScreen.y) {
+        if ((this.moving.y + this.getSize().y + properties.deltadepl) >= deplScreen.y) {
             // exit ball if needed
             return (this.moving.x >= gameComponents.carriage.posCarriage
                 && this.moving.x <= (gameComponents.carriage.posCarriage + (gameComponents.carriage.getSize().x))
@@ -134,7 +156,7 @@ function Ball(numero) {
     // remove the ball
     this.killBall = function () {
         // graphical
-        gameComponents.divJeu.removeChild(this.element);
+        gameComponents.gameDiv.removeChild(this.element);
         // object (functionnal)
         gameComponents.tabBalls = gameComponents.tabBalls.remove(this);
         // for the game
@@ -193,29 +215,45 @@ function intersectBallBrick(tmpBall, tmpBrick) {
     var intersect = { breakBrick: false, orientation: 'X' };
 
     if (tmpBrick != null && tmpBall != null) {
-        var Xball = tmpBall.moving.x + Math.floor(((properties.isIE) ? tmpBall.element.offsetWidth : tmpBall.element.clientWidth) / 2);
-        var Yball = tmpBall.moving.y + Math.floor(((properties.isIE) ? tmpBall.element.offsetHeight : tmpBall.element.clientHeight) / 2);
 
-        var X1Brick = tmpBrick.element.offsetLeft;
-        var X2Brick = X1Brick + ((properties.isIE) ? tmpBrick.element.offsetWidth : tmpBrick.element.clientWidth);
+        // get first object coordinates
+        let ballCoordinates = tmpBall.getCoordinates();
 
-        var Y1Brick = tmpBrick.element.offsetTop;
-        var Y2Brick = Y1Brick + ((properties.isIE) ? tmpBrick.element.offsetHeight : tmpBrick.element.clientHeight);
+        // get second object coordinates
+        let brickCoordinates = tmpBrick.getCoordinates()
 
         // prise en compte d'erreur de precision de calcul
-        if (((X1Brick <= Xball && Xball <= X2Brick) &&
-            (Math.abs(Yball - Y2Brick) <= precisionErreur))
-           ||
-           ((X1Brick <= Xball && Xball <= X2Brick) &&
-            (Math.abs(Yball - Y1Brick) <= precisionErreur))) {
+        if (((brickCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= brickCoordinates.x2)
+                && (Math.abs(ballCoordinates.y2 - brickCoordinates.y2) <= precisionErreur))
+             ||
+            ((brickCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= brickCoordinates.x2)
+                && (Math.abs(ballCoordinates.y1 - brickCoordinates.y1) <= precisionErreur))
+            ) {
             intersect.breakBrick = true;
             intersect.orientation = 'Y';
         }
-        else if (((Y1Brick <= Yball && Yball <= Y2Brick) &&
-            (Math.abs(Xball - X2Brick) <= precisionErreur))
+        else if (((brickCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= brickCoordinates.x2)
+                 && (Math.abs(ballCoordinates.y2 - brickCoordinates.y2) <= precisionErreur))
+                ||
+                ((brickCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= brickCoordinates.x2)
+                 && (Math.abs(ballCoordinates.y1 - brickCoordinates.y1) <= precisionErreur))
+            ) {
+            intersect.breakBrick = true;
+            intersect.orientation = 'Y';
+        }
+        else if (((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2) &&
+            (Math.abs(ballCoordinates.x2 - brickCoordinates.x2) <= precisionErreur))
            ||
-           ((Y1Brick <= Yball && Yball <= Y2Brick) &&
-            (Math.abs(Xball - X1Brick) <= precisionErreur))) {
+           ((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2) &&
+            (Math.abs(ballCoordinates.x1 - brickCoordinates.x1) <= precisionErreur))) {
+            intersect.breakBrick = true;
+            intersect.orientation = 'X';
+        }
+        else if (((brickCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= brickCoordinates.y2) &&
+            (Math.abs(ballCoordinates.x2 - brickCoordinates.x2) <= precisionErreur))
+            ||
+            ((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2) &&
+            (Math.abs(ballCoordinates.x1 - brickCoordinates.x1) <= precisionErreur))) {
             intersect.breakBrick = true;
             intersect.orientation = 'X';
         }
@@ -244,7 +282,7 @@ function Brick(numero) {
     };
     this.printObject();
     // append brick to the game
-    gameComponents.divJeu.appendChild(this.element);
+    gameComponents.gameDiv.appendChild(this.element);
 
     this.getSize = (properties.isIE) 
                     ? function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; }
@@ -279,6 +317,15 @@ function Brick(numero) {
     this.element.style.left = this.position.x + "px";
     this.element.style.top = this.position.y + "px";
 
+    this.getCoordinates = function() {
+        let tmpSize = this.getSize();
+        return {
+          x1: this.position.x,
+          y1: this.position.y,
+          x2: this.position.x + tmpSize.x,
+          y2: this.position.y + tmpSize.y
+        };
+      };
 
     // out of part to change
 
@@ -308,7 +355,7 @@ function Brick(numero) {
             default:
                 break;
         }
-        gameComponents.divJeu.removeChild(this.element);
+        gameComponents.gameDiv.removeChild(this.element);
         gameComponents.tabBricks = gameComponents.tabBricks.remove(this);
         return true;
     };
@@ -326,7 +373,7 @@ function Carriage() {
     this.element.id = "carriage";
     this.element.className = "Carriage";
     // add carriage to the board
-    gameComponents.divJeu.appendChild(this.element);
+    gameComponents.gameDiv.appendChild(this.element);
 
     this.deltaCarriage = 20;
     this.doubleCarriage = false;
@@ -356,8 +403,7 @@ function Carriage() {
         };
     };
 
-    this.getSize = (properties.isIE) ? this.ie_getSize
-                          : this.moz_getSize;
+    this.getSize = (properties.isIE) ? this.ie_getSize : this.moz_getSize;
 
     this.move = function (newPosition) {
         let carriageSize = this.getSize().x;
@@ -388,6 +434,13 @@ function Carriage() {
 const graphicalComponents = {
     isGraphic: true,
     graphicName: "",
+    themeDictionnary: {
+        'T': "tennis",
+        'C': "construction",
+        'E': "choucroutte"
+    },
+    getThemeIndexes: function() { return Object.keys(this.themeDictionnary); },
+    getCodeThemeIndexes: function() { return this.getThemeIndexes().map(obj => obj.charCodeAt(0));},
 
     getObjectsList: function() {
         return Array.concat(gameComponents.tabBalls, gameComponents.tabBricks, gameComponents.carriage);
@@ -418,15 +471,43 @@ const graphicalComponents = {
     },
 
     refreshObjects: function(theme = "") {
-        if(theme != "") this.graphicName = theme;
+        if (theme == "random") {
+            let keysDict = this.getThemeIndexes();
+            this.graphicName = keysDict[Math.floor(keysDict.length * Math.random())];
+        }
+        else if(theme != "") this.graphicName = theme;
+
+        if(this.graphicName == "") { // if theme is empty
+            let keysDict = this.getThemeIndexes();
+            this.graphicName = this.themeDictionnary[keysDict[0]];
+        }
+        else { // get the complet theme name
+            this.graphicName = this.themeDictionnary[this.graphicName];
+        }
         this.getObjectsList().map(obj => obj.printObject());
     }
 };
 
+const instructions = `
+Pong2 Instructions
+===============
+
+Key press:
+- from 1 to 9 : number of balls
+- ${graphicalComponents.getThemeIndexes()} : differents themes
+- +,-,*,/ : carriage speed
+- left and right arrows: move the carriage
+- D : double the carriage
+- I : this page
+- space : for cheat
+
+Have Fun !
+`;
+
 function Init() {
     deplScreen = getScreenSize();
-    gameComponents.divJeu = document.getElementById("game");
-    if (!gameComponents.divJeu) return false;
+    gameComponents.gameDiv = document.getElementById("game");
+    if (!gameComponents.gameDiv) return false;
 
     // instanciate carriage
     gameComponents.carriage = new Carriage();
@@ -445,8 +526,8 @@ function Init() {
     document.onkeydown = moveCarriageByKeyboard();
     document.onmousemove = moveCarriageByMouse();
 
-    // refresh environment with tennis theme by default
-    graphicalComponents.refreshObjects('tennis');
+    // refresh environment with random theme
+    graphicalComponents.refreshObjects("random");
 
     // start game
     setTimeout('goBall()', properties.timeOutdepl);
@@ -483,39 +564,37 @@ function handlerKey(e) {
     else if (keyPress == 45) properties.timeOutdepl++;
     else if (keyPress == 42) properties.deltadepl++;
     else if (keyPress == 47 && properties.deltadepl > 1) properties.deltadepl--;
-    else if (keyPress == 48) {
+    else if (keyPress == 48) { // zero just because the touch is large
         for (var i = 0, tabBallsLen = gameComponents.tabBalls.length; i < tabBallsLen; i++) {
-            gameComponents.tabBalls[i].element.innerHTML = (gameComponents.tabBalls[i].element.innerHTML == "o") ? "O" : "o";
+            gameComponents.tabBalls[i].element.innerHTML = "O";
         }
     }
     else if ((keyPress >= 49 && keyPress <= 57) ||
-			(keyPress >= 96 && keyPress <= 105)) { // from 1 to 9
+			 (keyPress >= 96 && keyPress <= 105)) { // from 1 to 9
         // enter the ball number with keyboard
         var nbBallDem = String.fromCharCode(keyPress);
         // check if there is enough
         if (nbBalls < nbBallDem) nbBallDem = nbBalls;
+        // get the rest of balls
         nbBallDem = nbBallDem - gameComponents.tabBalls.length;
         for (let i = 0; i < nbBallDem; i++)
-        gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
+            gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
     }
     else if (keyPress == 32) gameComponents.carriage.cheated(); // space
-    else if (keyPress == 27 || (!properties.isIE && e.code == 'Escape')) alert("Pause, v'la le chef !\nOK pour continuer ..."); // escape
+    else if (keyPress == 27 || (!properties.isIE && e.code == 'Escape')) alert(`Pause, Boss is here !\n\n${instructions}\nOK to continue ...`); // escape
     else if (keyPress == 66) { // 'B'
       graphicalComponents.switchGraphic(gameComponents.tabBalls);
       graphicalComponents.refreshObjects();
     }
-    else if (keyPress == 67) { // 'C'
-      graphicalComponents.refreshObjects('construction');
-    }
-    else if (keyPress == 69) { // 'E'
-      graphicalComponents.refreshObjects('choucroutte');
-    }
-    else if (keyPress == 84) { // 'T'
-      graphicalComponents.refreshObjects('tennis');
+    else if (graphicalComponents.getCodeThemeIndexes().indexOf(keyPress) > -1) { // 'C', 'E', 'T'
+      graphicalComponents.refreshObjects(String.fromCharCode(keyPress));
     }
     else if (keyPress === 68) { // 'D'
         gameComponents.carriage.doubleCarriage = !gameComponents.carriage.doubleCarriage;
         gameComponents.carriage.printObject();
+    }
+    else if (keyPress == 73) { // 'I'
+        alert(instructions);
     }
     else if (keyPress >= 65) { // a partir de 'A'
         gameComponents.tabBalls.map(objBal => objBal.element.innerHTML = String.fromCharCode(keyPress));
@@ -544,15 +623,15 @@ function moveCarriageByKeyboard() {
     }
   }
 
-  return (properties.isIE) ? function (e) { moveCarriage(event.keyCode); }
-                : function (e) { moveCarriage(e.which); }
+  return (properties.isIE)
+            ? function (e) { moveCarriage(event.keyCode); }
+            : function (e) { moveCarriage(e.which); };
     
 }
 
 function moveCarriageByMouse() {
 
-  var moveCarriage = (properties.isIE) ? function (evt) { gameComponents.carriage.move(event.x); }
-                            : function (evt) { gameComponents.carriage.move(evt.clientX); };
-
-  return moveCarriage;
+  return (properties.isIE)
+            ? function (evt) { gameComponents.carriage.move(event.x); }
+            : function (evt) { gameComponents.carriage.move(evt.clientX); };
 }
