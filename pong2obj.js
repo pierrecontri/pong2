@@ -144,10 +144,11 @@ function Ball(numero) {
     // tester la balle pour savoir si elle fait encore partie de l'air de jeu
     this.isInArea = function () {
         // check the ball if follow on carriage and in game area
-        if ((this.moving.y + this.getSize().y + properties.deltadepl) >= deplScreen.y) {
+        let ballCoordinates = this.getCoordinates();
+        let carriageCoordinates = gameComponents.carriage.getCoordinates();
+        if ((ballCoordinates.y2) >= carriageCoordinates.y1) {
             // exit ball if needed
-            return (this.moving.x >= gameComponents.carriage.posCarriage
-                && this.moving.x <= (gameComponents.carriage.posCarriage + (gameComponents.carriage.getSize().x))
+            return (this.moving.x >= carriageCoordinates.x1 && this.moving.x <= carriageCoordinates.x2
                 || switchCheated);
         }
         return true;
@@ -220,7 +221,7 @@ function intersectBallBrick(tmpBall, tmpBrick) {
         let ballCoordinates = tmpBall.getCoordinates();
 
         // get second object coordinates
-        let brickCoordinates = tmpBrick.getCoordinates()
+        let brickCoordinates = tmpBrick.getCoordinates();
 
         // prise en compte d'erreur de precision de calcul
         if (((brickCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= brickCoordinates.x2)
@@ -241,19 +242,19 @@ function intersectBallBrick(tmpBall, tmpBrick) {
             intersect.breakBrick = true;
             intersect.orientation = 'Y';
         }
-        else if (((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2) &&
-            (Math.abs(ballCoordinates.x2 - brickCoordinates.x2) <= precisionErreur))
-           ||
-           ((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2) &&
-            (Math.abs(ballCoordinates.x1 - brickCoordinates.x1) <= precisionErreur))) {
+        else if (((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2)
+                 && (Math.abs(ballCoordinates.x2 - brickCoordinates.x2) <= precisionErreur))
+                ||
+                ((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2)
+                 && (Math.abs(ballCoordinates.x1 - brickCoordinates.x1) <= precisionErreur))) {
             intersect.breakBrick = true;
             intersect.orientation = 'X';
         }
-        else if (((brickCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= brickCoordinates.y2) &&
-            (Math.abs(ballCoordinates.x2 - brickCoordinates.x2) <= precisionErreur))
-            ||
-            ((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2) &&
-            (Math.abs(ballCoordinates.x1 - brickCoordinates.x1) <= precisionErreur))) {
+        else if (((brickCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= brickCoordinates.y2)
+                 && (Math.abs(ballCoordinates.x2 - brickCoordinates.x2) <= precisionErreur))
+                ||
+                ((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2)
+                 && (Math.abs(ballCoordinates.x1 - brickCoordinates.x1) <= precisionErreur))) {
             intersect.breakBrick = true;
             intersect.orientation = 'X';
         }
@@ -377,7 +378,12 @@ function Carriage() {
 
     this.deltaCarriage = 20;
     this.doubleCarriage = false;
-    this.posCarriage = (deplScreen.x / 2);
+
+    this.getSize = (properties.isIE) 
+                        ? function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; }
+                        : function () { return {x: this.element.clientWidth, y: this.element.clientHeight}; };
+
+    this.position = { x: (deplScreen.x / 2), y: getScreenSize().y - 40};
 
     this.printObject = function () {
         this.element.innerHTML = graphicalComponents.getCarriage(this.doubleCarriage, switchCheated);
@@ -385,25 +391,20 @@ function Carriage() {
     };
 
     this.refresh = function () {
-        this.element.style.top = (getScreenSize().y - this.getSize().y) + "px";
-        this.element.style.left = ((switchCheated)?"0":this.posCarriage) + "px";
+        this.position.y = getScreenSize().y - this.getSize().y;
+        this.element.style.top = this.position.y + "px";
+        this.element.style.left = ((switchCheated)?"0":this.position.x) + "px";
     };
 
-    this.ie_getSize = function () {
-      return {
-        x: this.element.offsetWidth,
-        y: this.element.offsetHeight
-      };
-    };
-
-    this.moz_getSize = function () {
+    this.getCoordinates = function() {
+        let tmpSize = this.getSize();
         return {
-            x: this.element.clientWidth,
-            y: this.element.clientHeight
+          x1: this.position.x,
+          y1: this.position.y,
+          x2: this.position.x + tmpSize.x,
+          y2: this.position.y + tmpSize.y
         };
-    };
-
-    this.getSize = (properties.isIE) ? this.ie_getSize : this.moz_getSize;
+      };
 
     this.move = function (newPosition) {
         let carriageSize = this.getSize().x;
@@ -412,13 +413,13 @@ function Carriage() {
             && (newPosition - (carriageSize / 2)) > 0
             && (newPosition + (carriageSize / 2)) <= deplScreen.x) {
 
-            this.posCarriage = newPosition - (carriageSize / 2);
-            this.element.style.left = this.posCarriage + "px";
+            this.position.x = newPosition - (carriageSize / 2);
+            this.element.style.left = this.position.x + "px";
         }
     };
 
     this.moveTo = function (direction = MOVING_DIRECTION.NONE) {
-        let tmpPosL = this.posCarriage + (this.getSize().x / 2) + (direction * this.deltaCarriage);
+        let tmpPosL = this.position.x + (this.getSize().x / 2) + (direction * this.deltaCarriage);
         this.move(tmpPosL);
     }
 
@@ -477,7 +478,7 @@ const graphicalComponents = {
         }
         else if(theme != "") this.graphicName = theme;
 
-        if(this.graphicName == "") { // if theme is empty
+        if(this.graphicName == "undefined" || this.graphicName == "") { // if theme is empty
             let keysDict = this.getThemeIndexes();
             this.graphicName = this.themeDictionnary[keysDict[0]];
         }
