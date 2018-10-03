@@ -146,12 +146,18 @@ function Ball(numero) {
         // check the ball if follow on carriage and in game area
         let ballCoordinates = this.getCoordinates();
         let carriageCoordinates = gameComponents.carriage.getCoordinates();
-        if ((ballCoordinates.y2) >= carriageCoordinates.y1) {
-            // exit ball if needed
-            return (this.moving.x >= carriageCoordinates.x1 && this.moving.x <= carriageCoordinates.x2
-                || switchCheated);
-        }
-        return true;
+
+        let tmpObj = intersectBallBrick(this, gameComponents.carriage);
+        if(tmpObj.breakBrick) console.log(tmpObj);
+
+
+        return (ballCoordinates.y2 < carriageCoordinates.y1)
+            ||
+                ((ballCoordinates.y2 >= carriageCoordinates.y1)
+                &&
+                (ballCoordinates.x1 >= carriageCoordinates.x1 && ballCoordinates.x1 <= carriageCoordinates.x2
+                || ballCoordinates.x2 >= carriageCoordinates.x1 && ballCoordinates.x2 <= carriageCoordinates.x2 )
+            || switchCheated);
     };
 
     // remove the ball
