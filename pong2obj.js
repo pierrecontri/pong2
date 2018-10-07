@@ -145,11 +145,15 @@ function Ball(numero) {
     this.isInArea = function () {
         // check the ball if follow on carriage and in game area
         let ballCoordinates = this.getCoordinates();
+
+        // cheat or in game board
+
+        return (ballCoordinates.y2 < deplScreen.y || switchCheated);
+
+        /*
         let carriageCoordinates = gameComponents.carriage.getCoordinates();
 
-        let tmpObj = intersectBallBrick(this, gameComponents.carriage);
-        if(tmpObj.breakBrick) console.log(tmpObj);
-
+        let tmpObj = intersectBallObject(this, gameComponents.carriage);
 
         return (ballCoordinates.y2 < carriageCoordinates.y1)
             ||
@@ -158,6 +162,7 @@ function Ball(numero) {
                 (ballCoordinates.x1 >= carriageCoordinates.x1 && ballCoordinates.x1 <= carriageCoordinates.x2
                 || ballCoordinates.x2 >= carriageCoordinates.x1 && ballCoordinates.x2 <= carriageCoordinates.x2 )
             || switchCheated);
+        */
     };
 
     // remove the ball
@@ -181,8 +186,8 @@ function Ball(numero) {
         var breakB = false;
         // parcourir les Bricks pour savoir si la balle est dans la zone de l'une d'entre-elles.
         for (var idxBrick = 0, lenB = gameComponents.tabBricks.length; idxBrick < lenB; idxBrick++) {
-            var tmpBrick = gameComponents.tabBricks[idxBrick];
-            var intersect = intersectBallBrick(this, tmpBrick);
+            let tmpBrick = gameComponents.tabBricks[idxBrick];
+            let intersect = intersectBallObject(this, tmpBrick);
             if (intersect.breakBrick) {
                 tmpBrick.breakBrick();
                 this.changeBallOrientation(intersect.orientation);
@@ -192,42 +197,75 @@ function Ball(numero) {
         return breakB;
     };
 
+    // rebound if object on the way
+    this.objectRebound = function() {
+      let objectReboudList = Array.concat(gameComponents.tabBricks, gameComponents.carriage);
+      let tmpObj = objectReboudList.find( obj => {
+        let intersect = intersectBallObject(this, obj);
+        return (intersect.breakBrick);
+      });
+      return tmpObj;
+    };
+
     // move the ball
     this.move = function () {
+
+        let objCoordinates = this.getCoordinates();
+
         // horizontal
-        this.moving.xPos = ((this.moving.x + properties.deltadepl < deplScreen.x && this.moving.xPos == 1)
-                            || this.moving.x <= 0)
+        this.moving.xPos = ((objCoordinates.x2 + properties.deltadepl < deplScreen.x && this.moving.xPos == 1)
+                            || objCoordinates.x1 <= 0)
                         ? 1 : -1;
             
         this.moving.x += properties.deltadepl * this.moving.xPos;
 
         // vertical
-        this.moving.yPos = ((this.moving.y + properties.deltadepl < deplScreen.y && this.moving.yPos == 1)
-                            || this.moving.y <= 0)
-                        ? 1 : -1;
+        // depends of the carriage position
+        // do not change the orientation if not carriage
+
+        // change vertical orientation if the ball is on top of the screen
+        if(objCoordinates.y1 <= 0)
+            this.changeBallOrientation(ORIENTAION.VERTICAL);
 
         this.moving.y += properties.deltadepl * this.moving.yPos;
 
+
         this.refresh();
+
+        let objTouched = this.objectRebound();
+        if(objTouched instanceof Brick) {
+            this.breakBrick();
+        }
+        else if (objTouched instanceof Carriage) {
+            this.changeBallOrientation(ORIENTAION.VERTICAL);
+/*
+        if (this.isInArea()) {
+            this.moving.yPos = ((objCoordinates.y2 + properties.deltadepl < deplScreen.y && this.moving.yPos == 1)
+                                || objCoordinates.y1 <= 0)
+                            ? 1 : -1;
+        }
+        else {
+            this.killBall();
+        }
+*/
+        }
 
         // remove ball if not in game board
         if (!this.isInArea())
             this.killBall();
-        else
-            this.breakBrick();
     };
 }
 
-function intersectBallBrick(tmpBall, tmpBrick) {
+function intersectBallObject(tmpBall, tmpObject) {
     var intersect = { breakBrick: false, orientation: 'X' };
 
-    if (tmpBrick != null && tmpBall != null) {
+    if (tmpObject != null && tmpBall != null) {
 
         // get first object coordinates
         let ballCoordinates = tmpBall.getCoordinates();
 
         // get second object coordinates
-        let brickCoordinates = tmpBrick.getCoordinates();
+        let brickCoordinates = tmpObject.getCoordinates();
 
         // prise en compte d'erreur de precision de calcul
         if (((brickCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= brickCoordinates.x2)
@@ -311,9 +349,9 @@ function Brick(numero) {
         };
     };
 
-    this.isEqualPosition = function (tmpBrick) {
-        return (this.position.x == tmpBrick.position.x 
-             && this.position.y == tmpBrick.position.y);
+    this.isEqualPosition = function (tmpObject) {
+        return (this.position.x == tmpObject.position.x 
+             && this.position.y == tmpObject.position.y);
     };
 
     // set the brick to a free place on the game board
