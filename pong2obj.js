@@ -31,9 +31,9 @@
 
 // Declaration des objets du jeu
 // variables / constantes globales pour le joueur
-var nbBalls = 9;
 const properties = {
     nbBricks    : 60,
+    nbBalls     : 15,
     deltadepl   : 3, // pour toutes les balles
     timeOutdepl : 5, // temps en millisecondes de boucle du jeu
     isIE        : (window.event) ? 1 : 0 // verification du navigateur (pour les anciens IE6 / Netscape 4)isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
@@ -58,7 +58,7 @@ const MOVING_DIRECTION = {
     'NONE'  : 0
 }
 
-const ORIENTAION = {
+const ORIENTATION = {
     'HORIZONTAL': 'X',
     'VERTICAL'  : 'Y'
 }
@@ -129,7 +129,7 @@ function Ball(numero) {
     // methodes
     // change the ball orientation
     this.changeBallOrientation = function (orientation) {
-        if (orientation == ORIENTAION.HORIZONTAL)
+        if (orientation == ORIENTATION.HORIZONTAL)
             this.moving.xPos *= -1;
         else
             this.moving.yPos *= -1;
@@ -145,24 +145,8 @@ function Ball(numero) {
     this.isInArea = function () {
         // check the ball if follow on carriage and in game area
         let ballCoordinates = this.getCoordinates();
-
         // cheat or in game board
-
         return (ballCoordinates.y2 < deplScreen.y || switchCheated);
-
-        /*
-        let carriageCoordinates = gameComponents.carriage.getCoordinates();
-
-        let tmpObj = intersectBallObject(this, gameComponents.carriage);
-
-        return (ballCoordinates.y2 < carriageCoordinates.y1)
-            ||
-                ((ballCoordinates.y2 >= carriageCoordinates.y1)
-                &&
-                (ballCoordinates.x1 >= carriageCoordinates.x1 && ballCoordinates.x1 <= carriageCoordinates.x2
-                || ballCoordinates.x2 >= carriageCoordinates.x1 && ballCoordinates.x2 <= carriageCoordinates.x2 )
-            || switchCheated);
-        */
     };
 
     // remove the ball
@@ -172,7 +156,7 @@ function Ball(numero) {
         // object (functionnal)
         gameComponents.tabBalls = gameComponents.tabBalls.remove(this);
         // for the game
-        nbBalls--;
+        properties.nbBalls--;
         // remove double carriage if the ball is lost
         if (gameComponents.carriage.doubleCarriage) {
             gameComponents.carriage.doubleCarriage = false;
@@ -188,9 +172,9 @@ function Ball(numero) {
         for (var idxBrick = 0, lenB = gameComponents.tabBricks.length; idxBrick < lenB; idxBrick++) {
             let tmpBrick = gameComponents.tabBricks[idxBrick];
             let intersect = intersectBallObject(this, tmpBrick);
-            if (intersect.breakBrick) {
+            if (intersect !== false) {
                 tmpBrick.breakBrick();
-                this.changeBallOrientation(intersect.orientation);
+                this.changeBallOrientation(intersect);
                 breakB = true;
             }
         }
@@ -199,12 +183,13 @@ function Ball(numero) {
 
     // rebound if object on the way
     this.objectRebound = function() {
-      let objectReboudList = Array.concat(gameComponents.tabBricks, gameComponents.carriage);
-      let tmpObj = objectReboudList.find( obj => {
-        let intersect = intersectBallObject(this, obj);
-        return (intersect.breakBrick);
-      });
-      return tmpObj;
+      let objectReboudList = graphicalComponents.getObjectsList();
+      let lstObjects = objectReboudList.map(objRebound => ({ objCollision: objRebound, orientation: intersectBallObject(this, objRebound) }));
+      return lstObjects.find( obj => obj.orientation !== false );
+    };
+
+    this.actionOnRebound = function(obj) {
+      return null;
     };
 
     // move the ball
@@ -216,93 +201,81 @@ function Ball(numero) {
         this.moving.xPos = ((objCoordinates.x2 + properties.deltadepl < deplScreen.x && this.moving.xPos == 1)
                             || objCoordinates.x1 <= 0)
                         ? 1 : -1;
-            
-        this.moving.x += properties.deltadepl * this.moving.xPos;
-
         // vertical
-        // depends of the carriage position
-        // do not change the orientation if not carriage
-
         // change vertical orientation if the ball is on top of the screen
         if(objCoordinates.y1 <= 0)
-            this.changeBallOrientation(ORIENTAION.VERTICAL);
+            this.changeBallOrientation(ORIENTATION.VERTICAL);
 
+        this.moving.x += properties.deltadepl * this.moving.xPos;
         this.moving.y += properties.deltadepl * this.moving.yPos;
-
-
         this.refresh();
 
+        // calculate impacts with another potential object (ball, brick or carriage)
         let objTouched = this.objectRebound();
-        if(objTouched instanceof Brick) {
-            this.breakBrick();
-        }
-        else if (objTouched instanceof Carriage) {
-            this.changeBallOrientation(ORIENTAION.VERTICAL);
-/*
-        if (this.isInArea()) {
-            this.moving.yPos = ((objCoordinates.y2 + properties.deltadepl < deplScreen.y && this.moving.yPos == 1)
-                                || objCoordinates.y1 <= 0)
-                            ? 1 : -1;
-        }
-        else {
-            this.killBall();
-        }
-*/
+        if(objTouched) {
+            // to remove this part of map; increase speed
+            Array.concat(this, objTouched.objCollision).map(obj2 => obj2.impact(objTouched.orientation));
         }
 
         // remove ball if not in game board
         if (!this.isInArea())
             this.killBall();
     };
+
+    this.impact = this.changeBallOrientation;
 }
 
-function intersectBallObject(tmpBall, tmpObject) {
-    var intersect = { breakBrick: false, orientation: 'X' };
+function intersectBallObject(tmpBall, comparedObject) {
 
-    if (tmpObject != null && tmpBall != null) {
+    // 3 return values
+    // - false : no intersection
+    // - ORIENTATION.VERTICAL : intersection by vertical
+    // - ORIENTATION.HORIZONTAL : intersection by horizontal
+
+    var intersect = false;
+
+    if (comparedObject == null || tmpBall == null || tmpBall == comparedObject)
+        return false;
 
         // get first object coordinates
         let ballCoordinates = tmpBall.getCoordinates();
 
         // get second object coordinates
-        let brickCoordinates = tmpObject.getCoordinates();
+        let comparedObjectCoordinates = comparedObject.getCoordinates();
 
         // prise en compte d'erreur de precision de calcul
-        if (((brickCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= brickCoordinates.x2)
-                && (Math.abs(ballCoordinates.y2 - brickCoordinates.y2) <= precisionErreur))
+        if (((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
+                && (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur))
              ||
-            ((brickCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= brickCoordinates.x2)
-                && (Math.abs(ballCoordinates.y1 - brickCoordinates.y1) <= precisionErreur))
-            ) {
-            intersect.breakBrick = true;
-            intersect.orientation = 'Y';
+            ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
+                && (Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur))) {
+
+            intersect = ORIENTATION.VERTICAL;
         }
-        else if (((brickCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= brickCoordinates.x2)
-                 && (Math.abs(ballCoordinates.y2 - brickCoordinates.y2) <= precisionErreur))
+        else if (((comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2)
+                 && (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur))
                 ||
-                ((brickCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= brickCoordinates.x2)
-                 && (Math.abs(ballCoordinates.y1 - brickCoordinates.y1) <= precisionErreur))
-            ) {
-            intersect.breakBrick = true;
-            intersect.orientation = 'Y';
+                ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
+                 && (Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur))) {
+
+            intersect = ORIENTATION.VERTICAL;
         }
-        else if (((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2)
-                 && (Math.abs(ballCoordinates.x2 - brickCoordinates.x2) <= precisionErreur))
+        else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+                 && (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur))
                 ||
-                ((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2)
-                 && (Math.abs(ballCoordinates.x1 - brickCoordinates.x1) <= precisionErreur))) {
-            intersect.breakBrick = true;
-            intersect.orientation = 'X';
+                ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+                 && (Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur))) {
+
+            intersect = ORIENTATION.HORIZONTAL;
         }
-        else if (((brickCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= brickCoordinates.y2)
-                 && (Math.abs(ballCoordinates.x2 - brickCoordinates.x2) <= precisionErreur))
+        else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2)
+                 && (Math.abs(ballCoordinates.x2 - comparedObject.x2) <= precisionErreur))
                 ||
-                ((brickCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= brickCoordinates.y2)
-                 && (Math.abs(ballCoordinates.x1 - brickCoordinates.x1) <= precisionErreur))) {
-            intersect.breakBrick = true;
-            intersect.orientation = 'X';
+                ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+                 && (Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur))) {
+
+            intersect = ORIENTATION.HORIZONTAL;
         }
-    }
 
     return intersect;
 }
@@ -350,14 +323,15 @@ function Brick(numero) {
     };
 
     this.isEqualPosition = function (tmpObject) {
-        return (this.position.x == tmpObject.position.x 
+        return (this.position.x == tmpObject.position.x
              && this.position.y == tmpObject.position.y);
     };
 
     // set the brick to a free place on the game board
+    let escapeInfiniteLoop = 0;
     do {
         this.position = this.getRandomPosition();
-    } while (containtBrickPosition(this));
+    } while (containtBrickPosition(this) && escapeInfiniteLoop++ < 10000);
 
     this.element.style.left = this.position.x + "px";
     this.element.style.top = this.position.y + "px";
@@ -404,12 +378,14 @@ function Brick(numero) {
         gameComponents.tabBricks = gameComponents.tabBricks.remove(this);
         return true;
     };
+
+    this.impact = this.breakBrick;
 }
 
 function containtBrickPosition(searchBrick) {
     return gameComponents.tabBricks.find(
                 objBrick => searchBrick.isEqualPosition(objBrick)
-            ) == "undefined";
+            ) !== undefined;
 }
 
 // Carriage Object
@@ -473,6 +449,10 @@ function Carriage() {
     };
 
     this.printObject();
+
+    this.impact = function (impactOrientation) {
+        return null;
+    };
 }
 
 // this part can be consider as a singleton or uniq graphical helper object
@@ -522,7 +502,7 @@ const graphicalComponents = {
         }
         else if(theme != "") this.graphicName = theme;
 
-        if(this.graphicName == "undefined" || this.graphicName == "") { // if theme is empty
+        if(this.graphicName == "") { // if theme is empty
             let keysDict = this.getThemeIndexes();
             this.graphicName = this.themeDictionnary[keysDict[0]];
         }
@@ -619,7 +599,7 @@ function handlerKey(e) {
         // enter the ball number with keyboard
         var nbBallDem = String.fromCharCode(keyPress);
         // check if there is enough
-        if (nbBalls < nbBallDem) nbBallDem = nbBalls;
+        if (properties.nbBalls < nbBallDem) nbBallDem = properties.nbBalls;
         // get the rest of balls
         nbBallDem = nbBallDem - gameComponents.tabBalls.length;
         for (let i = 0; i < nbBallDem; i++)
@@ -671,7 +651,6 @@ function moveCarriageByKeyboard() {
   return (properties.isIE)
             ? function (e) { moveCarriage(event.keyCode); }
             : function (e) { moveCarriage(e.which); };
-    
 }
 
 function moveCarriageByMouse() {
