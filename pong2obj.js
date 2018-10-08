@@ -59,18 +59,15 @@ const MOVING_DIRECTION = {
 }
 
 const ORIENTATION = {
-    'HORIZONTAL': 'X',
-    'VERTICAL'  : 'Y'
+    'HORIZONTAL': 'x',
+    'VERTICAL'  : 'y'
 }
 
 // Redefinition de l'objet Array
 // Ajout d'une methode remove
-Array.prototype.remove = function (obj) {
-    let tmpArray = new Array();
-    for (var i = 0, len = this.length; i < len; i++) {
-        if (this[i] != obj) tmpArray.push(this[i]);
-    }
-    return tmpArray;
+if (Array.prototype.remove === undefined)
+Array.prototype.remove = function (objectToRemove) {
+    return this.filter(objArray => objArray != objectToRemove);
 };
 
 function getScreenSize() {
@@ -97,8 +94,7 @@ function Ball(numero) {
     this.moving = {
         x: Math.floor((deplScreen.x) * Math.random()),
         y: Math.floor((deplScreen.y) * Math.random()),
-        xPos: Math.floor(Math.random()),
-        yPos: -1
+        orientation: { x: Math.floor(Math.random()), y: -1 }
     };
 
     this.getSize = (properties.isIE) 
@@ -129,10 +125,7 @@ function Ball(numero) {
     // methodes
     // change the ball orientation
     this.changeBallOrientation = function (orientation) {
-        if (orientation == ORIENTATION.HORIZONTAL)
-            this.moving.xPos *= -1;
-        else
-            this.moving.yPos *= -1;
+        this.moving.orientation[orientation] *= -1;
     };
 
     // refresh ball position
@@ -198,21 +191,21 @@ function Ball(numero) {
         let objCoordinates = this.getCoordinates();
 
         // horizontal
-        this.moving.xPos = ((objCoordinates.x2 + properties.deltadepl < deplScreen.x && this.moving.xPos == 1)
-                            || objCoordinates.x1 <= 0)
-                        ? 1 : -1;
+        this.moving.orientation.x = ((objCoordinates.x2 + properties.deltadepl < deplScreen.x && this.moving.orientation.x == 1)
+                                     || objCoordinates.x1 <= 0)
+                                    ? 1 : -1;
         // vertical
         // change vertical orientation if the ball is on top of the screen
-        if(objCoordinates.y1 <= 0)
+        if (objCoordinates.y1 <= 0 || (objCoordinates.y2 > deplScreen.y && switchCheated))
             this.changeBallOrientation(ORIENTATION.VERTICAL);
 
-        this.moving.x += properties.deltadepl * this.moving.xPos;
-        this.moving.y += properties.deltadepl * this.moving.yPos;
+        this.moving.x += properties.deltadepl * this.moving.orientation.x;
+        this.moving.y += properties.deltadepl * this.moving.orientation.y;
         this.refresh();
 
         // calculate impacts with another potential object (ball, brick or carriage)
         let objTouched = this.objectRebound();
-        if(objTouched) {
+        if (objTouched) {
             // to remove this part of map; increase speed
             Array.concat(this, objTouched.objCollision).map(obj2 => obj2.impact(objTouched.orientation));
         }
@@ -237,45 +230,45 @@ function intersectBallObject(tmpBall, comparedObject) {
     if (comparedObject == null || tmpBall == null || tmpBall == comparedObject)
         return false;
 
-        // get first object coordinates
-        let ballCoordinates = tmpBall.getCoordinates();
+    // get first object coordinates
+    let ballCoordinates = tmpBall.getCoordinates();
 
-        // get second object coordinates
-        let comparedObjectCoordinates = comparedObject.getCoordinates();
+    // get second object coordinates
+    let comparedObjectCoordinates = comparedObject.getCoordinates();
 
-        // prise en compte d'erreur de precision de calcul
-        if (((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
-                && (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur))
-             ||
+    // prise en compte d'erreur de precision de calcul
+    if (((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
+            && (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur))
+         ||
+        ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
+            && (Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur))) {
+
+         intersect = ORIENTATION.VERTICAL;
+    }
+    else if (((comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2)
+             && (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur))
+            ||
             ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
-                && (Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur))) {
+             && (Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur))) {
 
-            intersect = ORIENTATION.VERTICAL;
-        }
-        else if (((comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2)
-                 && (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur))
-                ||
-                ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
-                 && (Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur))) {
+        intersect = ORIENTATION.VERTICAL;
+    }
+    else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+             && (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur))
+            ||
+            ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+             && (Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur))) {
 
-            intersect = ORIENTATION.VERTICAL;
-        }
-        else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
-                 && (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur))
-                ||
-                ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
-                 && (Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur))) {
+        intersect = ORIENTATION.HORIZONTAL;
+    }
+    else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2)
+             && (Math.abs(ballCoordinates.x2 - comparedObject.x2) <= precisionErreur))
+            ||
+            ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+             && (Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur))) {
 
-            intersect = ORIENTATION.HORIZONTAL;
-        }
-        else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2)
-                 && (Math.abs(ballCoordinates.x2 - comparedObject.x2) <= precisionErreur))
-                ||
-                ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
-                 && (Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur))) {
-
-            intersect = ORIENTATION.HORIZONTAL;
-        }
+        intersect = ORIENTATION.HORIZONTAL;
+    }
 
     return intersect;
 }
@@ -306,12 +299,12 @@ function Brick(numero) {
                     ? function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; }
                     : function () { return {x: this.element.clientWidth, y: this.element.clientHeight}; };
 
-// this part has to be exported
+    // this part has to be exported
     this.getRandomPosition = function () {
         // positionnement aleatoire sur la grille
         let tmpPos = {
-            x: ((deplScreen.x) * Math.random()),
-            y: ((deplScreen.y * 3 / 5) * Math.random())
+            x: ((deplScreen.x - 20) * Math.random()),
+            y: (((deplScreen.y) * 3 / 5) * Math.random())
         };
 
         // alignement sur une grille virtuelle
@@ -464,22 +457,17 @@ const graphicalComponents = {
         'C': "construction",
         'E': "choucroutte"
     },
-    getThemeIndexes: function() { return Object.keys(this.themeDictionnary); },
-    getCodeThemeIndexes: function() { return this.getThemeIndexes().map(obj => obj.charCodeAt(0));},
-
-    getObjectsList: function() {
-        return Array.concat(gameComponents.tabBalls, gameComponents.tabBricks, gameComponents.carriage);
-    },
-    
-    switchGraphic : function () {
-        graphicalComponents.isGraphic = !graphicalComponents.isGraphic;
-    },
+    getThemeIndexes:     function() { return Object.keys(this.themeDictionnary); },
+    getCodeThemeIndexes: function() { return this.getThemeIndexes().map(obj => obj.charCodeAt(0)); },
+    getObjectsList:      function() { return Array.concat(gameComponents.tabBalls, gameComponents.tabBricks, gameComponents.carriage); },
+    switchGraphic :      function() { graphicalComponents.isGraphic = !graphicalComponents.isGraphic; },
+    getBall:             function() { return (this.isGraphic) ? "<img class='ballImg' src='img/" + this.graphicName + "_ball.jpg' />" : "O"; },
 
     getCarriage : function (isDouble = false, tricks = false) {
         if (tricks) return "".padEnd(50,"_");
 
         let carriageGraph = (this.isGraphic) ? "<img src='img/" + this.graphicName + "_carriage.jpg' onload='gameComponents.carriage.refresh();'/>" : "".padEnd(10, "_");;
-        if(isDouble) carriageGraph += carriageGraph;
+        if (isDouble) carriageGraph += carriageGraph;
         return carriageGraph;
     },
 
@@ -491,18 +479,14 @@ const graphicalComponents = {
 
     },
 
-    getBall: function() {
-        return (this.isGraphic) ? "<img class='ballImg' src='img/" + this.graphicName + "_ball.jpg' />" : "O";
-    },
-
     refreshObjects: function(theme = "") {
         if (theme == "random") {
             let keysDict = this.getThemeIndexes();
             this.graphicName = keysDict[Math.floor(keysDict.length * Math.random())];
         }
-        else if(theme != "") this.graphicName = theme;
+        else if (theme != "") this.graphicName = theme;
 
-        if(this.graphicName == "") { // if theme is empty
+        if (this.graphicName == "") { // if theme is empty
             let keysDict = this.getThemeIndexes();
             this.graphicName = this.themeDictionnary[keysDict[0]];
         }
@@ -520,6 +504,7 @@ Pong2 Instructions
 Key press:
 - from 1 to 9 : number of balls
 - ${graphicalComponents.getThemeIndexes()} : differents themes
+- O : switch to html graphical
 - +,-,*,/ : carriage speed
 - left and right arrows: move the carriage
 - D : double the carriage
@@ -607,11 +592,11 @@ function handlerKey(e) {
     }
     else if (keyPress == 32) gameComponents.carriage.cheated(); // space
     else if (keyPress == 27 || (!properties.isIE && e.code == 'Escape')) alert(`Pause, Boss is here !\n\n${instructions}\nOK to continue ...`); // escape
-    else if (keyPress == 66) { // 'B'
+    else if (keyPress == 79) { // 'O'
       graphicalComponents.switchGraphic(gameComponents.tabBalls);
       graphicalComponents.refreshObjects();
     }
-    else if (graphicalComponents.getCodeThemeIndexes().indexOf(keyPress) > -1) { // 'C', 'E', 'T'
+    else if (graphicalComponents.getCodeThemeIndexes().indexOf(keyPress) > -1) { // 'C', 'E', 'T', 'B'
       graphicalComponents.refreshObjects(String.fromCharCode(keyPress));
     }
     else if (keyPress === 68) { // 'D'
