@@ -455,7 +455,8 @@ const graphicalComponents = {
     themeDictionnary: {
         'T': "tennis",
         'C': "construction",
-        'E': "choucroutte"
+        'E': "choucroutte",
+        'B': "balloon"
     },
     getThemeIndexes:     function() { return Object.keys(this.themeDictionnary); },
     getCodeThemeIndexes: function() { return this.getThemeIndexes().map(obj => obj.charCodeAt(0)); },
