@@ -4,12 +4,17 @@ function breakBricks() {
   $webPage = new WebPage();
   $webPage->docTitle    = "Pong 2";
   $webPage->metaWords   = "break bricks";
+
+  // age of the program
+  $d = getdate();
+  $programAge = date("Y", $d[0] - mktime(1,0,0,1,7,2005)) - 1970;
+
   
   $webPage->headerDescription = <<<ENDHeader
     <div>
       <h2>Break Bricks</h2>
       <p>I wrote this game in 2005 in procedural programming, transform it in object programming in 2006. Many people said me that is a stupid idea.</p>
-      <p>At now, 10 year after, I always use the code in example for my job. Many companies are so late in this technology.</p>
+      <p>At now, {$programAge} years later, I always use the code in example for my job. Many companies are so late in this technology.</p>
     </div>
 ENDHeader;
 

@@ -210,6 +210,7 @@ function Ball(numero) {
             Array.concat(this, objTouched.objCollision).map(obj2 => obj2.impact(objTouched.orientation));
         }
 
+        // check if the ball already in the board area
         // remove ball if not in game board
         if (!this.isInArea())
             this.killBall();
@@ -546,7 +547,7 @@ function Init() {
 }
 
 function goBall() {
-  // move balls
+  // move balls and get the intersected objects
   gameComponents.tabBalls.map(objBall => objBall.move());
 
   // game over if nomore balls
