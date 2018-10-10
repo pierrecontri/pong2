@@ -1,4 +1,14 @@
 <?php
+// ------------------------------------------
+// Differents variables for the web site
+class Pong2Constants {
+  static $dirPhotos     = "./data/pong2/img";
+  static $ficPhotos     = "./data/pong2/photos_en.csv";
+}
+// ------------------------------------------
+
+// ------------------------------------------
+// Web pages content
 
 function breakBricks() {
   $webPage = new WebPage();
@@ -9,6 +19,7 @@ function breakBricks() {
   $d = getdate();
   $programAge = date("Y", $d[0] - mktime(1,0,0,1,7,2005)) - 1970;
 
+  $listElems = DataManagement::getListElems(Pong2Constants::$ficPhotos, "pong2_img");
   
   $webPage->headerDescription = <<<ENDHeader
     <div>
@@ -24,7 +35,7 @@ ENDHeader;
     </div>
     <div>
 	  <a href="javascript:;"  onclick="javascript:window.open('./data/pong2/pong2.html','CasseBrique','width=800, height=640, toolbar=no, menubar=no, scrollbars=no, resizable=1, status=no, location=no');">
-	    <img src="./src/images/pong2View.jpg" alt="pong2" style="width: 100%; max-width: 500px;"/>
+	    <img src=".//data/pong2/img/pong2View.jpg" alt="pong2" style="width: 100%; max-width: 500px;"/>
 	  </a>
 	</div>
       <p>
@@ -32,6 +43,9 @@ Made entirely by hand in Notepad, TextEdit, I tried to write clean code and anno
 The game was written in a procedural manner, can be passed in writing later. The only reason to have passed in object is to show that we can properly encode the object in JavaScript. Its pitfalls is its loss of speed 1/10th.
       </p>
       <input type="button" class="btnsubmit" value="Bricks Break ..." onclick="javascript:window.open('./data/pong2/pong2.html','CasseBrique','width=800, height=640, toolbar=no, menubar=no, scrollbars=no, resizable=1, status=no, location=no');"/>\n
+
+{$listElems->fillContentObjects()}\n
+
 ENDCasseB;
 
   return $webPage;

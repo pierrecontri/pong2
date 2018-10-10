@@ -1,0 +1,3 @@
+<?
+   print("Erreur de lien !");
+?>
