@@ -134,16 +134,8 @@ function Ball(numero) {
         this.element.style.top = this.moving.y + "px";
     };
 
-    // tester la balle pour savoir si elle fait encore partie de l'air de jeu
-    this.isInArea = function () {
-        // check the ball if follow on carriage and in game area
-        let ballCoordinates = this.getCoordinates();
-        // cheat or in game board
-        return (ballCoordinates.y2 < deplScreen.y || switchCheated);
-    };
-
     // remove the ball
-    this.killBall = function () {
+    this.remove = function () {
         // graphical
         gameComponents.gameDiv.removeChild(this.element);
         // object (functionnal)
@@ -196,7 +188,7 @@ function Ball(numero) {
                                     ? 1 : -1;
         // vertical
         // change vertical orientation if the ball is on top of the screen
-        if (objCoordinates.y1 <= 0 || (objCoordinates.y2 > deplScreen.y && switchCheated))
+        if (objCoordinates.y1 <= 0 || (objCoordinates.y2 >= deplScreen.y && switchCheated))
             this.changeBallOrientation(ORIENTATION.VERTICAL);
 
         this.moving.x += properties.deltadepl * this.moving.orientation.x;
@@ -210,13 +202,15 @@ function Ball(numero) {
             Array.concat(this, objTouched.objCollision).map(obj2 => obj2.impact(objTouched.orientation));
         }
 
-        // check if the ball already in the board area
-        // remove ball if not in game board
-        if (!this.isInArea())
-            this.killBall();
     };
 
     this.impact = this.changeBallOrientation;
+}
+
+function isObjectNotInArea(obj) {
+    // check the ball if follow on carriage and in game area
+    // cheat or in game board
+    return !(obj.getCoordinates().y2 <= deplScreen.y + properties.deltadepl || switchCheated);
 }
 
 function intersectBallObject(tmpBall, comparedObject) {
@@ -549,6 +543,9 @@ function Init() {
 function goBall() {
   // move balls and get the intersected objects
   gameComponents.tabBalls.map(objBall => objBall.move());
+
+  // remove all balls wich are not in board area
+  gameComponents.tabBalls.filter(isObjectNotInArea).map(b => b.remove());
 
   // game over if nomore balls
   if (gameComponents.tabBalls == null || gameComponents.tabBalls.length == 0) {
