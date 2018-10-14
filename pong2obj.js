@@ -53,14 +53,14 @@ const gameComponents = {
 };
 
 const MOVING_DIRECTION = {
-    'LEFT'  : -1,
-    'RIGHT' : 1,
-    'NONE'  : 0
+    LEFT  : -1,
+    RIGHT : 1,
+    NONE  : 0
 }
 
 const ORIENTATION = {
-    'HORIZONTAL': 'x',
-    'VERTICAL'  : 'y'
+    HORIZONTAL : 'x',
+    VERTICAL   : 'y'
 }
 
 // Redefinition de l'objet Array
@@ -149,32 +149,11 @@ function Ball(numero) {
         }
     };
 
-    // break brick on it way
-    this.breakBrick = function () {
-        if (gameComponents.tabBricks == null) return false;
-        var breakB = false;
-        // parcourir les Bricks pour savoir si la balle est dans la zone de l'une d'entre-elles.
-        for (var idxBrick = 0, lenB = gameComponents.tabBricks.length; idxBrick < lenB; idxBrick++) {
-            let tmpBrick = gameComponents.tabBricks[idxBrick];
-            let intersect = intersectBallObject(this, tmpBrick);
-            if (intersect !== false) {
-                tmpBrick.breakBrick();
-                this.changeBallOrientation(intersect);
-                breakB = true;
-            }
-        }
-        return breakB;
-    };
-
     // rebound if object on the way
     this.objectRebound = function() {
       let objectReboudList = graphicalComponents.getObjectsList();
       let lstObjects = objectReboudList.map(objRebound => ({ objCollision: objRebound, orientation: intersectBallObject(this, objRebound) }));
       return lstObjects.find( obj => obj.orientation !== false );
-    };
-
-    this.actionOnRebound = function(obj) {
-      return null;
     };
 
     // move the ball
@@ -183,9 +162,9 @@ function Ball(numero) {
         let objCoordinates = this.getCoordinates();
 
         // horizontal
-        this.moving.orientation.x = ((objCoordinates.x2 + properties.deltadepl < deplScreen.x && this.moving.orientation.x == 1)
+        this.moving.orientation.x = ((objCoordinates.x2 + properties.deltadepl < deplScreen.x && this.moving.orientation.x == MOVING_DIRECTION.RIGHT)
                                      || objCoordinates.x1 <= 0)
-                                    ? 1 : -1;
+                                    ? MOVING_DIRECTION.RIGHT : MOVING_DIRECTION.LEFT;
         // vertical
         // change vertical orientation if the ball is on top of the screen
         if (objCoordinates.y1 <= 0 || (objCoordinates.y2 >= deplScreen.y && switchCheated))
@@ -199,12 +178,16 @@ function Ball(numero) {
         let objTouched = this.objectRebound();
         if (objTouched) {
             // to remove this part of map; increase speed
-            Array.concat(this, objTouched.objCollision).map(obj2 => obj2.impact(objTouched.orientation));
+            this.touchedPointOrientation = objTouched.orientation;
+            objTouched.objCollision.touchedPointOrientation = objTouched.orientation;
+            Array.concat(this, objTouched.objCollision).map(obj2 => obj2.impact());
         }
-
     };
 
-    this.impact = this.changeBallOrientation;
+    this.touchedPointOrientation = null;
+    this.impact = function() {
+        this.changeBallOrientation(this.touchedPointOrientation);
+    };
 }
 
 function isObjectNotInArea(obj) {
@@ -220,10 +203,10 @@ function intersectBallObject(tmpBall, comparedObject) {
     // - ORIENTATION.VERTICAL : intersection by vertical
     // - ORIENTATION.HORIZONTAL : intersection by horizontal
 
-    var intersect = false;
-
     if (comparedObject == null || tmpBall == null || tmpBall == comparedObject)
         return false;
+
+    var intersect = false;
 
     // get first object coordinates
     let ballCoordinates = tmpBall.getCoordinates();
@@ -367,6 +350,7 @@ function Brick(numero) {
         return true;
     };
 
+    this.touchedPointOrientation = null;
     this.impact = this.breakBrick;
 }
 
@@ -401,7 +385,7 @@ function Carriage() {
     this.refresh = function () {
         this.position.y = getScreenSize().y - this.getSize().y;
         this.element.style.top = this.position.y + "px";
-        this.element.style.left = ((switchCheated)?"0":this.position.x) + "px";
+        this.element.style.left = ((switchCheated) ? "0" : this.position.x) + "px";
     };
 
     this.getCoordinates = function() {
@@ -436,11 +420,12 @@ function Carriage() {
         this.printObject();
     };
 
-    this.printObject();
-
+    this.touchedPointOrientation = null;
     this.impact = function (impactOrientation) {
         return null;
     };
+
+    this.printObject();
 }
 
 // this part can be consider as a singleton or uniq graphical helper object
@@ -543,6 +528,20 @@ function Init() {
 function goBall() {
   // move balls and get the intersected objects
   gameComponents.tabBalls.map(objBall => objBall.move());
+
+  /* 
+  Functionnal part
+  
+  // and get object intersected
+  let objectsIntersectedLst = gameComponents.tabBalls.map(objBall => objBall.move());
+  // explood in one 1-D array
+  objectsIntersectedLst = objectsIntersectedLst.reduce((acc, val) => acc.concat(val), []);
+  // get only not null
+  let objectsIntersected = objectsIntersectedLst.filter(obj1 => obj1 !=null);
+  // set the operation for intersection
+  objectsIntersected.map(obj2 => obj2.impact(obj2.touchedPointOrientation));
+  
+  */
 
   // remove all balls wich are not in board area
   gameComponents.tabBalls.filter(isObjectNotInArea).map(b => b.remove());
