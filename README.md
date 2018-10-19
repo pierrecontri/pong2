@@ -13,6 +13,7 @@ I used the procedural programming.
 I transform it in object programming in 2006. Many people said me that is a stupid idea.
 
 At now, 13 years later, I always use the code in example for my job. Many companies are so late in this technology.
+
 It was compatible Netscape 4 until 2017.
 
 Orientation
