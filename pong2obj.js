@@ -555,7 +555,7 @@ function goBall() {
   }
 
   // restart game if nomore Bricks
-  if (gameComponents.tabBricks == null || gameComponents.tabBricks.length == 0) {
+  if (gameComponents.tabBricks.length == 0) {
     if (confirm("Congratulations !\nStart a new part ?"))
       document.location.reload();
     else
