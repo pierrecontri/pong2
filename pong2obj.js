@@ -547,7 +547,7 @@ function goBall() {
   gameComponents.tabBalls.filter(isObjectNotInArea).map(b => b.remove());
 
   // game over if nomore balls
-  if (gameComponents.tabBalls == null || gameComponents.tabBalls.length == 0) {
+  if (gameComponents.tabBalls.length == 0) {
     if (confirm("Game Over !\nStart a new part ?"))
       document.location.reload();
     else
