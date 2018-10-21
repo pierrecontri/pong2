@@ -264,7 +264,7 @@ function Brick(numero) {
     // 2) double carriage
     // 3) Brick double strength
     // 4) unbreakable
-    let brickType = Math.floor(5 * Math.random());
+    this.brickType = Math.floor(5 * Math.random());
 
     this.printObject = function () {
         this.element.innerHTML = graphicalComponents.getBrick(this.element.strength);
@@ -322,7 +322,7 @@ function Brick(numero) {
 
     // destruction of the brick
     this.breakBrick = function () {
-        switch (brickType) {
+        switch (this.brickType) {
             case 0: // triple balls
                 let nbBallDem = 3 - gameComponents.tabBalls.length;
                 for (let i = 0; i < nbBallDem; i++)
@@ -339,9 +339,10 @@ function Brick(numero) {
                     return false;
                 }
                 break;
-            //case 4: // inbreakable
-            //    return false;
-            //    break;
+            case 4: // inbreakable
+
+            console.log(this.element.strength);
+                return false;
             default:
                 break;
         }
@@ -554,8 +555,8 @@ function goBall() {
       return false;
   }
 
-  // restart game if nomore Bricks
-  if (gameComponents.tabBricks.length == 0) {
+  // restart game if nomore Bricks (except permanent)
+  if (gameComponents.tabBricks.filter(b => b.brickType != 4).length == 0) {
     if (confirm("Congratulations !\nStart a new part ?"))
       document.location.reload();
     else
