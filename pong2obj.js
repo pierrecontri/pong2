@@ -36,7 +36,8 @@ const properties = {
     nbBalls     : 15,
     deltadepl   : 3, // pour toutes les balles
     timeOutdepl : 5, // temps en millisecondes de boucle du jeu
-    isIE        : (window.event) ? 1 : 0 // verification du navigateur (pour les anciens IE6 / Netscape 4)isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
+    isIE        : (window.event) ? 1 : 0, // verification du navigateur (pour les anciens IE6 / Netscape 4)isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
+    screenMarge : {x: 50, y: 10}
 };
 
 // Variables de la classe __main__
@@ -72,8 +73,8 @@ Array.prototype.remove = function (objectToRemove) {
 
 function getScreenSize() {
     return {
-        x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - 50,
-        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - 10
+        x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - properties.screenMarge.x,
+        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - properties.screenMarge.y
     };
 }
 
@@ -325,31 +326,31 @@ function Brick(numero) {
     // destruction of the brick
     this.breakBrick = function () {
         switch (this.brickType) {
-            case 0: // simple brick
-
-            case 0: // triple balls
-                let nbBallDem = 3 - gameComponents.tabBalls.length;
-                for (let i = 0; i < nbBallDem; i++)
-                gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
+            case 0: // dead brick
                 break;
-            case 1: // double carriage
+            case 1: // breaked brick
+                break;
+            case 2: // normal brick
+                break;
+            case 3: // double strength brick
+                this.brickType = 1;
+                this.printObject();
+                return false;
+            case 4: // triple balls and break brick
+                let nbBallAsked = 3 - gameComponents.tabBalls.length;
+                for (let i = 0; i < nbBallAsked; i++)
+                    gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
+                break;
+            case 5: // double carriage and break brick
                 gameComponents.carriage.doubleCarriage = true;
                 gameComponents.carriage.printObject();
                 break;
-            case 3: // double strength
-                this.brickType--;
-                if (this.element.strength != 0) {
-                    this.printObject();
-                    return false;
-                }
-                break;
-            case 4: // inbreakable
-
-            console.log(this.element.strength);
+            case 6: // unbreakable
                 return false;
             default:
                 break;
         }
+        // break brick
         gameComponents.gameDiv.removeChild(this.element);
         gameComponents.tabBricks = gameComponents.tabBricks.remove(this);
         return true;
