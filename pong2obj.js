@@ -25,6 +25,7 @@
 /* ** -- Version 3.1 :  Brick with double strength         -- ** */
 /* ** -- Version 3.2 :  Strict JavScript                   -- ** */
 /* ** -- Version 3.3 :  Update code, ready for functionnal -- ** */
+/* ** -- Version 3.4 :  Strict JavaScript & ECMA v6 norm   -- ** */
 /* ** ------------------------------------------------------- ** */
 
 'use strict';
