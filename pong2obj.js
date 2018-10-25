@@ -30,8 +30,11 @@
 
 'use strict';
 
-// Declaration des objets du jeu
-// variables / constantes globales pour le joueur
+
+// ** *---------------------------------------------------* **
+// **               PROPERTIES GAME PART
+// ** *---------------------------------------------------* **
+
 const properties = {
     nbBricks    : 60,
     nbBalls     : 15,
@@ -41,7 +44,7 @@ const properties = {
     screenMarge : {x: 50, y: 10}
 };
 
-// Variables de la classe __main__
+// Variables of __main__ class
 var deplScreen = null;
 var switchCheated = false;
 var precisionErreur = 1;
@@ -65,7 +68,7 @@ const ORIENTATION = {
     VERTICAL   : 'y'
 }
 
-// Redefinition de l'objet Array
+// Array redefine for removing
 // Ajout d'une methode remove
 if (Array.prototype.remove === undefined)
 Array.prototype.remove = function (objectToRemove) {
@@ -78,6 +81,11 @@ function getScreenSize() {
         y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - properties.screenMarge.y
     };
 }
+
+
+// ** *---------------------------------------------------* **
+// **                   BALL PART
+// ** *---------------------------------------------------* **
 
 // Objet "Ball"
 function Ball(numero) {
@@ -253,6 +261,11 @@ function intersectBallObject(tmpBall, comparedObject) {
     return intersect;
 }
 
+
+// ** *---------------------------------------------------* **
+// **                   BRICK PART
+// ** *---------------------------------------------------* **
+
 // Objet Brick
 function Brick(numero) {
     this.numero = numero;
@@ -268,7 +281,7 @@ function Brick(numero) {
     // 4) multiply balls
     // 5) double carriage
     // 6) unbreakable
-    this.brickType = Math.floor(5 * Math.random()) + 1;
+    this.brickType = Math.floor(5 * Math.random()) + 2;
 
     this.printObject = function () {
         this.element.innerHTML = graphicalComponents.getBrick(this.brickType);
@@ -367,6 +380,11 @@ function containtBrickPosition(searchBrick) {
             ) !== undefined;
 }
 
+
+// ** *---------------------------------------------------* **
+// **                   CARRIAGE PART
+// ** *---------------------------------------------------* **
+
 // Carriage Object
 function Carriage() {
     this.element = document.createElement('DIV');
@@ -435,6 +453,10 @@ function Carriage() {
     this.printObject();
 }
 
+// ** *---------------------------------------------------* **
+// **                   GRAPHICAL PART
+// ** *---------------------------------------------------* **
+
 // this part can be consider as a singleton or uniq graphical helper object
 const graphicalComponents = {
     isGraphic: true,
@@ -459,12 +481,12 @@ const graphicalComponents = {
         return carriageGraph;
     },
 
-    getBrick: function(strength = 2, unbreakable = false) {
-        let unbreakableBrick = (unbreakable) ? " unbreakableBrick" : "";
+    getBrick: function(strength = 2) {
+        let unbreakableBrick = (strength == 6) ? " unbreakableBrick" : "";
         return (this.isGraphic) ?
                   "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick" + strength + ".jpg' />" :
-                  ((strength > 1) ? "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
-                                    "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
+                  ((strength > 1) ? "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;" + strength + "&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
+                                    "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;" + strength + "&nbsp;&nbsp;&nbsp;</td></tr></table>");
     },
 
     refreshObjects: function(theme = "") {
@@ -501,6 +523,12 @@ Key press:
 
 Have Fun !
 `;
+
+
+// ** *---------------------------------------------------* **
+// **                   MAIN PART
+// ** *---------------------------------------------------* **
+
 
 function Init() {
     deplScreen = getScreenSize();
@@ -571,6 +599,12 @@ function goBall() {
 
   setTimeout('goBall()', properties.timeOutdepl);
 }
+
+
+
+// ** *---------------------------------------------------* **
+// **                   HANDLER PART
+// ** *---------------------------------------------------* **
 
 function handlerKey(e) {
     var keyPress = (properties.isIE) ? event.keyCode : e.which;
