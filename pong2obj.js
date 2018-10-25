@@ -258,16 +258,18 @@ function Brick(numero) {
     this.element.id = "brick" + numero;
     this.element.name = "brick";
     this.element.className = "Brick";
-    this.element.strength = 2;
     // type of Brick
-    // 1) multiply balls
-    // 2) double carriage
-    // 3) Brick double strength
-    // 4) unbreakable
-    this.brickType = Math.floor(5 * Math.random());
+    // 0) dead brick
+    // 1) breaked brick
+    // 2) normal brick
+    // 3) double brick
+    // 4) multiply balls
+    // 5) double carriage
+    // 6) unbreakable
+    this.brickType = Math.floor(5 * Math.random()) + 1;
 
     this.printObject = function () {
-        this.element.innerHTML = graphicalComponents.getBrick(this.element.strength);
+        this.element.innerHTML = graphicalComponents.getBrick(this.brickType);
     };
     this.printObject();
     // append brick to the game
@@ -323,6 +325,8 @@ function Brick(numero) {
     // destruction of the brick
     this.breakBrick = function () {
         switch (this.brickType) {
+            case 0: // simple brick
+
             case 0: // triple balls
                 let nbBallDem = 3 - gameComponents.tabBalls.length;
                 for (let i = 0; i < nbBallDem; i++)
@@ -333,7 +337,7 @@ function Brick(numero) {
                 gameComponents.carriage.printObject();
                 break;
             case 3: // double strength
-                this.element.strength--;
+                this.brickType--;
                 if (this.element.strength != 0) {
                     this.printObject();
                     return false;
@@ -453,12 +457,12 @@ const graphicalComponents = {
         return carriageGraph;
     },
 
-    getBrick: function(strength = 2) {
+    getBrick: function(strength = 2, unbreakable = false) {
+        let unbreakableBrick = (unbreakable) ? " unbreakableBrick" : "";
         return (this.isGraphic) ?
-                  "<img class='brickImg' src='img/" + this.graphicName + "_brick" + strength + ".jpg' />" :
-                  ((strength > 1) ? "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
+                  "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick" + strength + ".jpg' />" :
+                  ((strength > 1) ? "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
                                     "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
-
     },
 
     refreshObjects: function(theme = "") {
