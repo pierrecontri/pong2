@@ -69,10 +69,15 @@ const ORIENTATION = {
 }
 
 // Array redefine for removing
-// Ajout d'une methode remove
 if (Array.prototype.remove === undefined)
 Array.prototype.remove = function (objectToRemove) {
     return this.filter(objArray => objArray != objectToRemove);
+};
+
+// Array defined random function
+if(Array.prototype.random === undefined)
+Array.prototype.random = function () {
+    return this[Math.floor(Math.random() * this.length)];
 };
 
 function getScreenSize() {
@@ -190,7 +195,7 @@ function Ball(numero) {
             // to remove this part of map; increase speed
             this.touchedPointOrientation = objTouched.orientation;
             objTouched.objCollision.touchedPointOrientation = objTouched.orientation;
-            Array.concat(this, objTouched.objCollision).map(obj2 => obj2.impact());
+            [].concat(this, objTouched.objCollision).map(obj2 => obj2.impact());
         }
     };
 
@@ -266,6 +271,18 @@ function intersectBallObject(tmpBall, comparedObject) {
 // **                   BRICK PART
 // ** *---------------------------------------------------* **
 
+// type of brick
+const TYPE_BRICK = {
+    DESTRUCTED      : 0,
+    BREAKED         : 1,
+    NORMAL          : 2,
+    DOUBLE_STRENGTH : 3,
+    TRIPLE_BALLS    : 4,
+    DOUBLE_CARRIAGE : 5,
+    UNBREAKABLE     : 6,
+    RND             : function() { /* brickTypeAllowed */ return [2,3,4,5,6].random();}
+};
+
 // Objet Brick
 function Brick(numero) {
     this.numero = numero;
@@ -274,14 +291,15 @@ function Brick(numero) {
     this.element.name = "brick";
     this.element.className = "Brick";
     // type of Brick
-    // 0) dead brick
+    // 0) destructed brick
     // 1) breaked brick
     // 2) normal brick
     // 3) double brick
     // 4) multiply balls
     // 5) double carriage
     // 6) unbreakable
-    this.brickType = Math.floor(5 * Math.random()) + 2;
+    //let brickTypeAllowed = Array.from({length: TYPE_BRICK.length - 2}, (v, i) => i + 2);
+    this.brickType = TYPE_BRICK.RND();
 
     this.printObject = function () {
         this.element.innerHTML = graphicalComponents.getBrick(this.brickType);
@@ -340,26 +358,26 @@ function Brick(numero) {
     // destruction of the brick
     this.breakBrick = function () {
         switch (this.brickType) {
-            case 0: // dead brick
+            case TYPE_BRICK.DEAD:
                 break;
-            case 1: // breaked brick
+            case TYPE_BRICK.BREAKED:
                 break;
-            case 2: // normal brick
+            case TYPE_BRICK.NORMAL:
                 break;
-            case 3: // double strength brick
+            case TYPE_BRICK.DOUBLE_STRENGTH:
                 this.brickType = 1;
                 this.printObject();
                 return false;
-            case 4: // triple balls and break brick
+            case TYPE_BRICK.TRIPLE_BALLS:
                 let nbBallAsked = 3 - gameComponents.tabBalls.length;
                 for (let i = 0; i < nbBallAsked; i++)
                     gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
                 break;
-            case 5: // double carriage and break brick
+            case TYPE_BRICK.DOUBLE_CARRIAGE:
                 gameComponents.carriage.doubleCarriage = true;
                 gameComponents.carriage.printObject();
                 break;
-            case 6: // unbreakable
+            case TYPE_BRICK.UNBREAKABLE:
                 return false;
             default:
                 break;
@@ -469,7 +487,7 @@ const graphicalComponents = {
     },
     getThemeIndexes:     function() { return Object.keys(this.themeDictionnary); },
     getCodeThemeIndexes: function() { return this.getThemeIndexes().map(obj => obj.charCodeAt(0)); },
-    getObjectsList:      function() { return Array.concat(gameComponents.tabBalls, gameComponents.tabBricks, gameComponents.carriage); },
+    getObjectsList:      function() { return [].concat(gameComponents.tabBalls, gameComponents.tabBricks, gameComponents.carriage); },
     switchGraphic :      function() { graphicalComponents.isGraphic = !graphicalComponents.isGraphic; },
     getBall:             function() { return (this.isGraphic) ? "<img class='ballImg' src='img/" + this.graphicName + "_ball.jpg' />" : "O"; },
 
@@ -481,28 +499,26 @@ const graphicalComponents = {
         return carriageGraph;
     },
 
-    getBrick: function(strength = 2) {
-        let unbreakableBrick = (strength == 6) ? " unbreakableBrick" : "";
+    getBrick: function(brickType) {
+        let unbreakableBrick = (brickType == TYPE_BRICK.UNBREAKABLE) ? " unbreakableBrick" : "";
         return (this.isGraphic) ?
-                  "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick" + strength + ".jpg' />" :
-                  ((strength > 1) ? "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;" + strength + "&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
-                                    "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;" + strength + "&nbsp;&nbsp;&nbsp;</td></tr></table>");
+                ((brickType > 1) ? "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick2.jpg' />" :
+                                   "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick1.jpg' />") :
+                ((brickType > 1) ? "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;" + brickType + "&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
+                                   "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;" + brickType + "&nbsp;&nbsp;&nbsp;</td></tr></table>");
     },
 
     refreshObjects: function(theme = "") {
-        if (theme == "random") {
+
+        // get random theme if there is no graphicName or random asking
+        if (theme == "random" || (this.graphicName == "" && theme == "")) {
             let keysDict = this.getThemeIndexes();
-            this.graphicName = keysDict[Math.floor(keysDict.length * Math.random())];
+            this.graphicName = keysDict.random(); //[Math.floor(keysDict.length * Math.random())];
         }
         else if (theme != "") this.graphicName = theme;
 
-        if (this.graphicName == "") { // if theme is empty
-            let keysDict = this.getThemeIndexes();
-            this.graphicName = this.themeDictionnary[keysDict[0]];
-        }
-        else { // get the complet theme name
-            this.graphicName = this.themeDictionnary[this.graphicName];
-        }
+        // get the complet theme name
+        this.graphicName = this.themeDictionnary[this.graphicName];
         this.getObjectsList().map(obj => obj.printObject());
     }
 };
@@ -528,7 +544,6 @@ Have Fun !
 // ** *---------------------------------------------------* **
 // **                   MAIN PART
 // ** *---------------------------------------------------* **
-
 
 function Init() {
     deplScreen = getScreenSize();
@@ -590,7 +605,7 @@ function goBall() {
   }
 
   // restart game if nomore Bricks (except permanent)
-  if (gameComponents.tabBricks.filter(b => b.brickType != 4).length == 0) {
+  if (gameComponents.tabBricks.filter(b => b.brickType != TYPE_BRICK.UNBREAKABLE).length == 0) {
     if (confirm("Congratulations !\nStart a new part ?"))
       document.location.reload();
     else
