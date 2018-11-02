@@ -221,7 +221,7 @@ function intersectBallObject(tmpBall, comparedObject) {
     if (comparedObject == null || tmpBall == null || tmpBall == comparedObject)
         return false;
 
-    var intersect = false;
+    let intersect = false;
 
     // get first object coordinates
     let ballCoordinates = tmpBall.getCoordinates();
@@ -230,7 +230,7 @@ function intersectBallObject(tmpBall, comparedObject) {
     let comparedObjectCoordinates = comparedObject.getCoordinates();
 
 
-    // prise en compte d'erreur de precision de calcul
+    // intersection calculation
     if (((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
           ||
          (comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2))
