@@ -231,35 +231,23 @@ function intersectBallObject(tmpBall, comparedObject) {
 
 
     // prise en compte d'erreur de precision de calcul
-    if ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
-            && 
-            (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur
-             ||
-            Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur)) {
+    if (((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
+          ||
+         (comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2))
+        && 
+          (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur
+           ||
+           Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur)) {
 
          intersect = ORIENTATION.VERTICAL;
     }
-    else if ((comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2)
-             &&
-             (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur
-              ||
-              Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur)) {
-
-        intersect = ORIENTATION.VERTICAL;
-    }
-    else if ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
-             &&
-             (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur
-              ||
-              Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur)) {
-
-        intersect = ORIENTATION.HORIZONTAL;
-    }
-    else if ((comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2)
-             &&
-             (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur
-              ||
-              Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur)) {
+    else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+               ||
+              (comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2))
+            &&
+              (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur
+               ||
+               Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur)) {
 
         intersect = ORIENTATION.HORIZONTAL;
     }
