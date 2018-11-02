@@ -229,36 +229,37 @@ function intersectBallObject(tmpBall, comparedObject) {
     // get second object coordinates
     let comparedObjectCoordinates = comparedObject.getCoordinates();
 
+
     // prise en compte d'erreur de precision de calcul
-    if (((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
-            && (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur))
-         ||
-        ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
-            && (Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur))) {
+    if ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
+            && 
+            (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur
+             ||
+            Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur)) {
 
          intersect = ORIENTATION.VERTICAL;
     }
-    else if (((comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2)
-             && (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur))
-            ||
-            ((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
-             && (Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur))) {
+    else if ((comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2)
+             &&
+             (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur
+              ||
+              Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur)) {
 
         intersect = ORIENTATION.VERTICAL;
     }
-    else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
-             && (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur))
-            ||
-            ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
-             && (Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur))) {
+    else if ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+             &&
+             (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur
+              ||
+              Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur)) {
 
         intersect = ORIENTATION.HORIZONTAL;
     }
-    else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2)
-             && (Math.abs(ballCoordinates.x2 - comparedObject.x2) <= precisionErreur))
-            ||
-            ((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
-             && (Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur))) {
+    else if ((comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2)
+             &&
+             (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur
+              ||
+              Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur)) {
 
         intersect = ORIENTATION.HORIZONTAL;
     }
@@ -280,7 +281,8 @@ const TYPE_BRICK = {
     TRIPLE_BALLS    : 4,
     DOUBLE_CARRIAGE : 5,
     UNBREAKABLE     : 6,
-    RND             : function() { /* brickTypeAllowed */ return [2,3,4,5,6].random();}
+    rnd             : function() { /* brickTypeAllowed */ return [2,3,4,5,6].random();}
+    //rnd             : function() { return [...Array(5).keys()].map(i => i + 2).random();}
 };
 
 // Objet Brick
@@ -299,7 +301,7 @@ function Brick(numero) {
     // 5) double carriage
     // 6) unbreakable
     //let brickTypeAllowed = Array.from({length: TYPE_BRICK.length - 2}, (v, i) => i + 2);
-    this.brickType = TYPE_BRICK.RND();
+    this.brickType = TYPE_BRICK.rnd();
 
     this.printObject = function () {
         this.element.innerHTML = graphicalComponents.getBrick(this.brickType);
