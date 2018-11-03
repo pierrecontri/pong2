@@ -19,13 +19,14 @@
 /* ** -- Version 2.5 :  alignement des Bricks sur grille   -- ** */
 /* ** -- Version 2.6 :  acceleration calculs               -- ** */
 /* ** -- Version 2.7 :  pouvoirs sur Bricks                -- ** */
-/* ** -- Version 2.8 :  reduction du code                  -- ** */
+/* ** -- Version 2.8 :  code refactoring                   -- ** */
 /* ** -- Version 2.9 :  correction interpreteur JavaScr    -- ** */
 /* ** -- Version 3.0 :  amelioration qualite code          -- ** */
 /* ** -- Version 3.1 :  Brick with double strength         -- ** */
 /* ** -- Version 3.2 :  Strict JavScript                   -- ** */
 /* ** -- Version 3.3 :  Update code, ready for functionnal -- ** */
 /* ** -- Version 3.4 :  Strict JavaScript & ECMA v6 norm   -- ** */
+/* ** -- Version 3.5 :  Remove the IE part                 -- ** */
 /* ** ------------------------------------------------------- ** */
 
 'use strict';
@@ -35,20 +36,18 @@
 // **               PROPERTIES GAME PART
 // ** *---------------------------------------------------* **
 
-const properties = {
-    nbBricks    : 60,
-    nbBalls     : 15,
-    deltadepl   : 3, // pour toutes les balles
-    timeOutdepl : 5, // temps en millisecondes de boucle du jeu
-    isIE        : (window.event) ? 1 : 0, // verification du navigateur (pour les anciens IE6 / Netscape 4)isIE = (window.event) ? 1 : 0; // verification du navigateur (pour les anciens IE6 / Netscape 4)
-    screenMarge : {x: 50, y: 10}
-};
-
 // Variables of __main__ class
-var deplScreen = null;
-var switchCheated = false;
-var precisionErreur = 1;
-var graphismeImg = true;
+const gameProperties = {
+    nbBricks      : 60,
+    nbBalls       : 15,
+    movingDelta   : 3, // moving delta distance between two ticks
+    scaleError    : 1.1 * 3,
+    movingTimeOut : 7, // game looping timeout 7ms
+    isIE          : 0, //(window.event) ? 1 : 0, -> ECMA v6 not needed
+    screenMarge   : {x: 50, y: 10},
+    screenSize    : null,
+    switchCheated : false
+};
 
 const gameComponents = {
     gameDiv: null,
@@ -82,8 +81,8 @@ Array.prototype.random = function () {
 
 function getScreenSize() {
     return {
-        x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - properties.screenMarge.x,
-        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - properties.screenMarge.y
+        x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - gameProperties.screenMarge.x,
+        y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - gameProperties.screenMarge.y
     };
 }
 
@@ -107,12 +106,12 @@ function Ball(numero) {
 
     // randomisation du positionnement des balles
     this.moving = {
-        x: Math.floor((deplScreen.x) * Math.random()),
-        y: Math.floor((deplScreen.y) * Math.random()),
+        x: Math.floor((gameProperties.screenSize.x) * Math.random()),
+        y: Math.floor((gameProperties.screenSize.y) * Math.random()),
         orientation: { x: Math.floor(Math.random()), y: -1 }
     };
 
-    this.getSize = (properties.isIE) 
+    this.getSize = (gameProperties.isIE) 
                     ? function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; }
                     : function () { return {x: this.element.clientWidth, y: this.element.clientHeight}; };
 
@@ -156,7 +155,7 @@ function Ball(numero) {
         // object (functionnal)
         gameComponents.tabBalls = gameComponents.tabBalls.remove(this);
         // for the game
-        properties.nbBalls--;
+        gameProperties.nbBalls--;
         // remove double carriage if the ball is lost
         if (gameComponents.carriage.doubleCarriage) {
             gameComponents.carriage.doubleCarriage = false;
@@ -177,16 +176,16 @@ function Ball(numero) {
         let objCoordinates = this.getCoordinates();
 
         // horizontal
-        this.moving.orientation.x = ((objCoordinates.x2 + properties.deltadepl < deplScreen.x && this.moving.orientation.x == MOVING_DIRECTION.RIGHT)
+        this.moving.orientation.x = ((objCoordinates.x2 + gameProperties.movingDelta < gameProperties.screenSize.x && this.moving.orientation.x == MOVING_DIRECTION.RIGHT)
                                      || objCoordinates.x1 <= 0)
                                     ? MOVING_DIRECTION.RIGHT : MOVING_DIRECTION.LEFT;
         // vertical
         // change vertical orientation if the ball is on top of the screen
-        if (objCoordinates.y1 <= 0 || (objCoordinates.y2 >= deplScreen.y && switchCheated))
+        if (objCoordinates.y1 <= 0 || (objCoordinates.y2 >= gameProperties.screenSize.y && gameProperties.switchCheated))
             this.changeBallOrientation(ORIENTATION.VERTICAL);
 
-        this.moving.x += properties.deltadepl * this.moving.orientation.x;
-        this.moving.y += properties.deltadepl * this.moving.orientation.y;
+        this.moving.x += gameProperties.movingDelta * this.moving.orientation.x;
+        this.moving.y += gameProperties.movingDelta * this.moving.orientation.y;
         this.refresh();
 
         // calculate impacts with another potential object (ball, brick or carriage)
@@ -208,7 +207,7 @@ function Ball(numero) {
 function isObjectNotInArea(obj) {
     // check the ball if follow on carriage and in game area
     // cheat or in game board
-    return !(obj.getCoordinates().y2 <= deplScreen.y + properties.deltadepl || switchCheated);
+    return !(obj.getCoordinates().y2 <= gameProperties.screenSize.y + gameProperties.movingDelta || gameProperties.switchCheated);
 }
 
 function intersectBallObject(tmpBall, comparedObject) {
@@ -221,33 +220,31 @@ function intersectBallObject(tmpBall, comparedObject) {
     if (comparedObject == null || tmpBall == null || tmpBall == comparedObject)
         return false;
 
-    let intersect = false;
-
     // get first object coordinates
     let ballCoordinates = tmpBall.getCoordinates();
 
     // get second object coordinates
     let comparedObjectCoordinates = comparedObject.getCoordinates();
 
-
     // intersection calculation
+    let intersect = false;
     if (((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
           ||
          (comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2))
         && 
-          (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= precisionErreur
+          (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= gameProperties.scaleError
            ||
-           Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= precisionErreur)) {
+           Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= gameProperties.scaleError)) {
 
-         intersect = ORIENTATION.VERTICAL;
+        intersect = ORIENTATION.VERTICAL;
     }
     else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
                ||
               (comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2))
             &&
-              (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= precisionErreur
+              (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= gameProperties.scaleError
                ||
-               Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= precisionErreur)) {
+               Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= gameProperties.scaleError)) {
 
         intersect = ORIENTATION.HORIZONTAL;
     }
@@ -298,7 +295,7 @@ function Brick(numero) {
     // append brick to the game
     gameComponents.gameDiv.appendChild(this.element);
 
-    this.getSize = (properties.isIE) 
+    this.getSize = (gameProperties.isIE) 
                     ? function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; }
                     : function () { return {x: this.element.clientWidth, y: this.element.clientHeight}; };
 
@@ -306,8 +303,8 @@ function Brick(numero) {
     this.getRandomPosition = function () {
         // positionnement aleatoire sur la grille
         let tmpPos = {
-            x: ((deplScreen.x - 20) * Math.random()),
-            y: (((deplScreen.y) * 3 / 5) * Math.random())
+            x: ((gameProperties.screenSize.x - 20) * Math.random()),
+            y: (((gameProperties.screenSize.y) * 3 / 5) * Math.random())
         };
 
         // alignement sur une grille virtuelle
@@ -404,21 +401,21 @@ function Carriage() {
     this.deltaCarriage = 20;
     this.doubleCarriage = false;
 
-    this.getSize = (properties.isIE) 
+    this.getSize = (gameProperties.isIE) 
                         ? function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; }
                         : function () { return {x: this.element.clientWidth, y: this.element.clientHeight}; };
 
-    this.position = { x: (deplScreen.x / 2), y: getScreenSize().y - 40};
+    this.position = { x: (gameProperties.screenSize.x / 2), y: getScreenSize().y - 40};
 
     this.printObject = function () {
-        this.element.innerHTML = graphicalComponents.getCarriage(this.doubleCarriage, switchCheated);
+        this.element.innerHTML = graphicalComponents.getCarriage(this.doubleCarriage, gameProperties.switchCheated);
         this.refresh();
     };
 
     this.refresh = function () {
         this.position.y = getScreenSize().y - this.getSize().y;
         this.element.style.top = this.position.y + "px";
-        this.element.style.left = ((switchCheated) ? "0" : this.position.x) + "px";
+        this.element.style.left = ((gameProperties.switchCheated) ? "0" : this.position.x) + "px";
     };
 
     this.getCoordinates = function() {
@@ -434,9 +431,9 @@ function Carriage() {
     this.move = function (newPosition) {
         let carriageSize = this.getSize().x;
 
-        if (!switchCheated
+        if (!gameProperties.switchCheated
             && (newPosition - (carriageSize / 2)) > 0
-            && (newPosition + (carriageSize / 2)) <= deplScreen.x) {
+            && (newPosition + (carriageSize / 2)) <= gameProperties.screenSize.x) {
 
             this.position.x = newPosition - (carriageSize / 2);
             this.element.style.left = this.position.x + "px";
@@ -449,7 +446,7 @@ function Carriage() {
     }
 
     this.cheated = function () {
-        switchCheated = !switchCheated;
+        gameProperties.switchCheated = !gameProperties.switchCheated;
         this.printObject();
     };
 
@@ -536,7 +533,7 @@ Have Fun !
 // ** *---------------------------------------------------* **
 
 function Init() {
-    deplScreen = getScreenSize();
+    gameProperties.screenSize = getScreenSize();
     gameComponents.gameDiv = document.getElementById("game");
     if (!gameComponents.gameDiv) return false;
 
@@ -549,7 +546,7 @@ function Init() {
 
     // instanciate bricks
     gameComponents.tabBricks = new Array();
-    for (var i = 0; i < properties.nbBricks; i++)
+    for (var i = 0; i < gameProperties.nbBricks; i++)
         gameComponents.tabBricks.push(new Brick(i));
 
     // keyboard and mouse management
@@ -561,7 +558,7 @@ function Init() {
     graphicalComponents.refreshObjects("random");
 
     // start game
-    setTimeout('goBall()', properties.timeOutdepl);
+    setTimeout('goBall()', gameProperties.movingTimeOut);
     return true;
 }
 
@@ -602,7 +599,7 @@ function goBall() {
       return false;
   }
 
-  setTimeout('goBall()', properties.timeOutdepl);
+  setTimeout('goBall()', gameProperties.movingTimeOut);
 }
 
 
@@ -612,12 +609,12 @@ function goBall() {
 // ** *---------------------------------------------------* **
 
 function handlerKey(e) {
-    var keyPress = (properties.isIE) ? event.keyCode : e.which;
+    var keyPress = (gameProperties.isIE) ? event.keyCode : e.which;
 
-    if (keyPress == 43 && properties.timeOutdepl > 1) properties.timeOutdepl--;
-    else if (keyPress == 45) properties.timeOutdepl++;
-    else if (keyPress == 42) properties.deltadepl++;
-    else if (keyPress == 47 && properties.deltadepl > 1) properties.deltadepl--;
+    if (keyPress == 43 && gameProperties.movingTimeOut > 1) gameProperties.movingTimeOut--;
+    else if (keyPress == 45) gameProperties.movingTimeOut++;
+    else if (keyPress == 42) gameProperties.movingDelta++;
+    else if (keyPress == 47 && gameProperties.movingDelta > 1) gameProperties.movingDelta--;
     else if (keyPress == 48) { // zero just because the touch is large
         for (var i = 0, tabBallsLen = gameComponents.tabBalls.length; i < tabBallsLen; i++) {
             gameComponents.tabBalls[i].element.innerHTML = "O";
@@ -628,14 +625,14 @@ function handlerKey(e) {
         // enter the ball number with keyboard
         var nbBallDem = String.fromCharCode(keyPress);
         // check if there is enough
-        if (properties.nbBalls < nbBallDem) nbBallDem = properties.nbBalls;
+        if (gameProperties.nbBalls < nbBallDem) nbBallDem = gameProperties.nbBalls;
         // get the rest of balls
         nbBallDem = nbBallDem - gameComponents.tabBalls.length;
         for (let i = 0; i < nbBallDem; i++)
             gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
     }
     else if (keyPress == 32) gameComponents.carriage.cheated(); // space
-    else if (keyPress == 27 || (!properties.isIE && e.code == 'Escape')) alert(`Pause, Boss is here !\n\n${instructions}\nOK to continue ...`); // escape
+    else if (keyPress == 27 || (!gameProperties.isIE && e.code == 'Escape')) alert(`Pause, Boss is here !\n\n${instructions}\nOK to continue ...`); // escape
     else if (keyPress == 79) { // 'O'
       graphicalComponents.switchGraphic(gameComponents.tabBalls);
       graphicalComponents.refreshObjects();
@@ -677,14 +674,14 @@ function moveCarriageByKeyboard() {
     }
   }
 
-  return (properties.isIE)
+  return (gameProperties.isIE)
             ? function (e) { moveCarriage(event.keyCode); }
             : function (e) { moveCarriage(e.which); };
 }
 
 function moveCarriageByMouse() {
 
-  return (properties.isIE)
+  return (gameProperties.isIE)
             ? function (evt) { gameComponents.carriage.move(event.x); }
             : function (evt) { gameComponents.carriage.move(evt.clientX); };
 }
