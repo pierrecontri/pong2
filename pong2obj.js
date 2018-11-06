@@ -49,6 +49,7 @@ const gameProperties = {
     switchCheated : false
 };
 
+// for graphic components
 const gameComponents = {
     gameDiv: null,
     tabBalls: null,
@@ -56,18 +57,18 @@ const gameComponents = {
     carriage: null
 };
 
-const MOVING_DIRECTION = {
-    LEFT  : -1,
-    RIGHT : 1,
-    NONE  : 0
-}
-
+// dictionnary of positions and orientations
 const ORIENTATION = {
+    NONE       : 0,
+    LEFT       : -1,
+    RIGHT      : 1,
+    TOP        : 2,
+    BOTTOM     : -2,
     HORIZONTAL : 'x',
     VERTICAL   : 'y'
 }
 
-// Array redefine for removing
+// Array redefine for object removing
 if (Array.prototype.remove === undefined)
 Array.prototype.remove = function (objectToRemove) {
     return this.filter(objArray => objArray != objectToRemove);
@@ -176,9 +177,9 @@ function Ball(numero) {
         let objCoordinates = this.getCoordinates();
 
         // horizontal
-        this.moving.orientation.x = ((objCoordinates.x2 + gameProperties.movingDelta < gameProperties.screenSize.x && this.moving.orientation.x == MOVING_DIRECTION.RIGHT)
+        this.moving.orientation.x = ((objCoordinates.x2 + gameProperties.movingDelta < gameProperties.screenSize.x && this.moving.orientation.x == ORIENTATION.RIGHT)
                                      || objCoordinates.x1 <= 0)
-                                    ? MOVING_DIRECTION.RIGHT : MOVING_DIRECTION.LEFT;
+                                    ? ORIENTATION.RIGHT : ORIENTATION.LEFT;
         // vertical
         // change vertical orientation if the ball is on top of the screen
         if (objCoordinates.y1 <= 0 || (objCoordinates.y2 >= gameProperties.screenSize.y && gameProperties.switchCheated))
@@ -270,6 +271,12 @@ const TYPE_BRICK = {
     //rnd             : function() { return [...Array(5).keys()].map(i => i + 2).random();}
 };
 
+const STATE_BRICK = {
+    DESTRUCTED      : 0,
+    BREAKED         : 1,
+    BUILT           : 2
+};
+
 // Objet Brick
 function Brick(numero) {
     this.numero = numero;
@@ -278,14 +285,7 @@ function Brick(numero) {
     this.element.name = "brick";
     this.element.className = "Brick";
     // type of Brick
-    // 0) destructed brick
-    // 1) breaked brick
-    // 2) normal brick
-    // 3) double brick
-    // 4) multiply balls
-    // 5) double carriage
-    // 6) unbreakable
-    //let brickTypeAllowed = Array.from({length: TYPE_BRICK.length - 2}, (v, i) => i + 2);
+    // on construct, get random brick type
     this.brickType = TYPE_BRICK.rnd();
 
     this.printObject = function () {
@@ -345,12 +345,6 @@ function Brick(numero) {
     // destruction of the brick
     this.breakBrick = function () {
         switch (this.brickType) {
-            case TYPE_BRICK.DEAD:
-                break;
-            case TYPE_BRICK.BREAKED:
-                break;
-            case TYPE_BRICK.NORMAL:
-                break;
             case TYPE_BRICK.DOUBLE_STRENGTH:
                 this.brickType = 1;
                 this.printObject();
@@ -440,7 +434,7 @@ function Carriage() {
         }
     };
 
-    this.moveTo = function (direction = MOVING_DIRECTION.NONE) {
+    this.moveTo = function (direction = ORIENTATION.NONE) {
         let tmpPosL = this.position.x + (this.getSize().x / 2) + (direction * this.deltaCarriage);
         this.move(tmpPosL);
     }
@@ -658,10 +652,10 @@ function moveCarriageByKeyboard() {
   var moveCarriage = function (keyCode) {
     switch (keyCode) {
         case 37:  // move to the left
-            gameComponents.carriage.moveTo(MOVING_DIRECTION.LEFT);
+            gameComponents.carriage.moveTo(ORIENTATION.LEFT);
             break;
         case 39: // move to the right
-            gameComponents.carriage.moveTo(MOVING_DIRECTION.RIGHT);
+            gameComponents.carriage.moveTo(ORIENTATION.RIGHT);
             break;
         case 38: // carriage acceleration
             gameComponents.carriage.deltaCarriage++;
