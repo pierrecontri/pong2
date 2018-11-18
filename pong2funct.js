@@ -12,7 +12,6 @@
 
 // Constants declaration
 const properties = {
-  isIE : (window.event) ? 1 : 0,
   nbBalls : 9,
   nbBricks : 60,
   movingDelta : 3,
@@ -46,8 +45,8 @@ function graphicalObject(objectName, objectNumber, initialPosition = { x: 0, y: 
 
   this.getSize = function() {
     return {
-      x: (properties.isIE) ? this.element.offsetWidth : this.element.clientWidth,
-      y: (properties.isIE) ? this.element.offsetHeight : this.element.clientHeight
+      x: this.element.offsetWidth,
+      y: this.element.offsetHeight
     };
   };
 }
@@ -113,8 +112,8 @@ var refreshObject = function(obj) {
 // screen size
 function getSizeScreen() {
   return {
-      x: ((properties.isIE) ? document.body.offsetWidth : document.body.clientWidth) - 40,
-      y: ((properties.isIE) ? document.body.offsetHeight : document.body.clientHeight) - 30
+      x: document.body.clientWidth - 40,
+      y: document.body.clientHeight - 30
   };
 }
 
@@ -160,17 +159,11 @@ function moveCarriageByKeyboard() {
     }
   }
 
-  return (properties.isIE)
-              ? function (e) { moveCarriage(event.keyCode); }
-              : function (e) { moveCarriage(e.which); };
+  return function (event) { moveCarriage(event.keyCode); };
 }
 
 function moveCarriageByMouse() {
-
-  var moveCarriage = (properties.isIE)
-                        ? function (e) { carriage.move(event.x); }
-                        : function (e) { carriage.move(e.clientX); };
-
+  var moveCarriage = function (event) { carriage.move(event.clientX); };
   return moveCarriage;
 }
 
@@ -201,7 +194,7 @@ function Init() {
   if (!divJeu) return false;
 
   //document.onkeypress = handlerKey;
-  document.onkeydown = movCarriageByKeyboard;
-  document.onmousemove = movCarriageByMouse;
+  document.onkeydown = moveCarriageByKeyboard();
+  document.onmousemove = moveCarriageByMouse();
   setTimeout('goBall', properties.movingTimer);
 }
