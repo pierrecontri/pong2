@@ -41,7 +41,7 @@ const gameProperties = {
     nbBricks      : 60,
     nbBalls       : 15,
     movingDelta   : 3, // moving delta distance between two ticks
-    scaleError    : 1.1 * 3,
+    scaleError    : 6.4, // 2.1 * movingDelta,
     movingTimeOut : 7, // game looping timeout 7ms
     isIE          : 0, //(window.event) ? 1 : 0, -> ECMA v6 not needed
     screenMarge   : {x: 50, y: 10},
@@ -211,6 +211,14 @@ function isObjectNotInArea(obj) {
     return !(obj.getCoordinates().y2 <= gameProperties.screenSize.y + gameProperties.movingDelta || gameProperties.switchCheated);
 }
 
+function cmpInferiorityWithPrecisionError(x, y) {
+    return (y - x) < gameProperties.scaleError;
+}
+
+function cmpAbsoluteInferirorityWithPrecisionError(x, y) {
+    return Math.abs(y - x) < gameProperties.scaleError;
+}
+
 function intersectBallObject(tmpBall, comparedObject) {
 
     // 3 return values
@@ -229,24 +237,28 @@ function intersectBallObject(tmpBall, comparedObject) {
 
     // intersection calculation
     let intersect = false;
-    if (((comparedObjectCoordinates.x1 <= ballCoordinates.x1 && ballCoordinates.x1 <= comparedObjectCoordinates.x2)
+    if (((cmpInferiorityWithPrecisionError(ballCoordinates.x1, comparedObjectCoordinates.x1)
+              && cmpInferiorityWithPrecisionError( comparedObjectCoordinates.x2, ballCoordinates.x1))
           ||
-         (comparedObjectCoordinates.x1 <= ballCoordinates.x2 && ballCoordinates.x2 <= comparedObjectCoordinates.x2))
-        && 
-          (Math.abs(ballCoordinates.y2 - comparedObjectCoordinates.y2) <= gameProperties.scaleError
+         (cmpInferiorityWithPrecisionError(ballCoordinates.x2, comparedObjectCoordinates.x1)
+              && cmpInferiorityWithPrecisionError(comparedObjectCoordinates.x2,  ballCoordinates.x2)))
+        &&
+          (cmpAbsoluteInferirorityWithPrecisionError(comparedObjectCoordinates.y2, ballCoordinates.y2)
            ||
-           Math.abs(ballCoordinates.y1 - comparedObjectCoordinates.y1) <= gameProperties.scaleError)) {
+           cmpAbsoluteInferirorityWithPrecisionError(comparedObjectCoordinates.y1, ballCoordinates.y1))) {
 
         intersect = ORIENTATION.VERTICAL;
     }
-    else if (((comparedObjectCoordinates.y1 <= ballCoordinates.y1 && ballCoordinates.y1 <= comparedObjectCoordinates.y2)
+    else if (((cmpInferiorityWithPrecisionError(ballCoordinates.y1, comparedObjectCoordinates.y1)
+                    && cmpInferiorityWithPrecisionError(comparedObjectCoordinates.y2, ballCoordinates.y1))
                ||
-              (comparedObjectCoordinates.y1 <= ballCoordinates.y2 && ballCoordinates.y2 <= comparedObjectCoordinates.y2))
+              (cmpInferiorityWithPrecisionError(ballCoordinates.y2, comparedObjectCoordinates.y1)
+                    && cmpInferiorityWithPrecisionError(comparedObjectCoordinates.y2, ballCoordinates.y2)))
             &&
-              (Math.abs(ballCoordinates.x2 - comparedObjectCoordinates.x2) <= gameProperties.scaleError
-               ||
-               Math.abs(ballCoordinates.x1 - comparedObjectCoordinates.x1) <= gameProperties.scaleError)) {
-
+            (cmpAbsoluteInferirorityWithPrecisionError(comparedObjectCoordinates.x2, ballCoordinates.x2)
+            ||
+            cmpAbsoluteInferirorityWithPrecisionError(comparedObjectCoordinates.x1, ballCoordinates.x1))) {
+ 
         intersect = ORIENTATION.HORIZONTAL;
     }
 
@@ -485,8 +497,8 @@ const graphicalComponents = {
         return (this.isGraphic) ?
                 ((brickType > 1) ? "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick2.jpg' />" :
                                    "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick1.jpg' />") :
-                ((brickType > 1) ? "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;" + brickType + "&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
-                                   "<table class=\"InsideBrick\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;" + brickType + "&nbsp;&nbsp;&nbsp;</td></tr></table>");
+                ((brickType > 1) ? "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
+                                   "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
     },
 
     refreshObjects: function(theme = "") {
