@@ -20,7 +20,12 @@ Orientation
 -----------
 On 2017, new orientation technologie.
 Go Ahead is the new orientation.
-The pong is now in JavaScript ECMAScript v6 "use strict" standard. Don't mind about Navigator wich does not respect standards (like Google, IE11, Edge, ... ). There are norms : use it !
+
+The pong is now in JavaScript ECMAScript v6 "use strict" standard.
+
+Don't mind about Navigator wich does not respect W3C standards.
+
+There are norms : use it !
 
 About Free Criticizing
 ----------------------
