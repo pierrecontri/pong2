@@ -27,8 +27,8 @@ var divJeu = null;
 function graphicalObject(objectName, objectNumber, initialPosition = { x: 0, y: 0 }) {
   // variables
   this.element = document.createElement('DIV');
-  this.element.id = objectName + objectNumber;
-  this.element.name = objectName;
+  this.element.id = objectName.toLowerCase() + objectNumber;
+  this.element.name = objectName.toLowerCase();
   this.element.className = objectName;
 
   this.position = initialPosition;
@@ -51,8 +51,8 @@ function graphicalObject(objectName, objectNumber, initialPosition = { x: 0, y: 
   };
 }
 
-// ball
-function ball(ballNumber) {
+// Ball
+function Ball(ballNumber) {
   // herits of graphicalObject
   this.prototype = new graphicalObject(this.constructor.name, ballNumber);
   //this.prototype.innerHTML = ballDesign(false);
@@ -61,8 +61,8 @@ function ball(ballNumber) {
   return this.prototype;
 }
 
-// carriage
-function carriage(carriageName) {
+// Carriage
+function Carriage(carriageName) {
   // herits of graphicalObject
   this.prototype = new graphicalObject(this.constructor.name, carriageName);
   this.prototype.element.innerHTML = carriageDesign(false);
