@@ -10,15 +10,40 @@
 
 'use strict';
 
-// Constants declaration
-const properties = {
-  nbBalls : 9,
-  nbBricks : 60,
-  movingDelta : 3,
-  movingTimer : 5
+// ** *---------------------------------------------------* **
+// **               PROPERTIES GAME PART
+// ** *---------------------------------------------------* **
+
+// Variables of __main__ class
+const gameProperties = {
+  nbBricks      : 60,
+  nbBalls       : 15,
+  movingDelta   : 1, // moving delta distance between two ticks
+  scaleError    : 3.4, // 2.1 * movingDelta,
+  movingTimeOut : 7, // game looping timeout 7ms
+  screenMarge   : {x: 50, y: 10},
+  screenSize    : null,
+  switchCheated : false
 };
 
-var divJeu = null;
+// for graphic components
+const gameComponents = {
+  gameDiv: null,
+  tabBalls: null,
+  tabBricks: null,
+  carriage: null
+};
+
+// dictionnary of positions and orientations
+const ORIENTATION = {
+  NONE       : 0,
+  LEFT       : -1,
+  RIGHT      : 1,
+  TOP        : 2,
+  BOTTOM     : -2,
+  HORIZONTAL : 'x',
+  VERTICAL   : 'y'
+}
 
 // types declaration
 
@@ -36,18 +61,14 @@ function graphicalObject(objectName, objectNumber, initialPosition = { x: 0, y: 
   this.coordinates = function() {
     let tmpSize = this.getSize();
     return {
-      x1: this.position.x,
-      y1: this.position.y,
-      x2: this.position.x + tmpSize.x,
-      y2: this.position.y + tmpSize.y
+      point1 : { x: this.position.x,                  y: this.position.y },
+      point2 : { x: this.position.x + tmpSize.x,      y: this.position.y + tmpSize.y },
+      center : { x: this.position.x + tmpSize.x / 2,  y: this.position.y + tmpSize.y / 2 }
     };
   };
 
   this.getSize = function() {
-    return {
-      x: this.element.offsetWidth,
-      y: this.element.offsetHeight
-    };
+    return { x: this.element.offsetWidth, y: this.element.offsetHeight };
   };
 }
 
@@ -68,10 +89,10 @@ function Carriage(carriageName) {
   this.prototype.element.innerHTML = carriageDesign(false);
 
   this.prototype.move = function (newPosition) {
-    //if ((newPosition - (this.size().x / 2)) > 0 && (newPosition + (tmpX / 2)) <= deplScreen.x && !basculeTriche) {
-    //    this.posCarriage = newPosition - (tmpX / 2);
+    if ((newPosition - (this.getSize().x / 2)) > 0 && (newPosition + (this.posCarriage / 2)) <= gameProperties.screenSize.x && !basculeTriche) {
+        this.posCarriage = newPosition - (this.posCarriage / 2);
         console.log("move");
-    //}
+    }
   };
 
   return this.prototype;
@@ -110,13 +131,16 @@ var refreshObject = function(obj) {
 // list of bricks
 
 // screen size
-function getSizeScreen() {
+function getScreenSize() {
   return {
-      x: document.body.clientWidth - 40,
-      y: document.body.clientHeight - 30
+      x: (window.innerWidth  || document.body.clientWidth  || document.body.offsetWidth)  - gameProperties.screenMarge.x,
+      y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - gameProperties.screenMarge.y
   };
 }
 
+function setScreenSize() {
+  gameProperties.screenSize = getScreenSize();
+}
 
 // random position
 function getRandomPosition(objectSize, areaSize) {
@@ -131,56 +155,147 @@ function getRandomPosition(objectSize, areaSize) {
   tmpPos.y = Math.floor(tmpPos.y / objectSize.y) * objectSize.y;
 
   return tmpPos;
+}
+// ** *---------------------------------------------------* **
+// **                   GRAPHICAL PART
+// ** *---------------------------------------------------* **
+
+// this part can be consider as a singleton or uniq graphical helper object
+const graphicalComponents = {
+  isGraphic: true,
+  graphicName: "",
+  themeDictionnary: {
+      'T': "tennis",
+      'C': "construction",
+      'E': "choucroutte",
+      'B': "balloon"
+  },
+  getThemeIndexes:     function() { return Object.keys(this.themeDictionnary); },
+  getCodeThemeIndexes: function() { return this.getThemeIndexes().map(obj => obj.charCodeAt(0)); },
+  getObjectsList:      function() { return [].concat(gameComponents.tabBalls, gameComponents.tabBricks, gameComponents.carriage); },
+  switchGraphic :      function() { graphicalComponents.isGraphic = !graphicalComponents.isGraphic; },
+  getBall:             function() { return (this.isGraphic) ? "<img class='ballImg' src='img/" + this.graphicName + "_ball.jpg' />" : "O"; },
+
+  getCarriage : function (isDouble = false, tricks = false) {
+      if (tricks) return "".padEnd(50,"_");
+
+      let carriageGraph = (this.isGraphic) ? "<img src='img/" + this.graphicName + "_carriage.jpg' onload='gameComponents.carriage.refresh();'/>" : "".padEnd(10, "_");;
+      if (isDouble) carriageGraph += carriageGraph;
+      return carriageGraph;
+  },
+
+  getBrick: function(brickType) {
+      let unbreakableBrick = (brickType == Brick.TYPE.UNBREAKABLE) ? " unbreakableBrick" : "";
+      return (this.isGraphic) ?
+              ((brickType > 1) ? "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick2.jpg' />" :
+                                 "<img class='brickImg" + unbreakableBrick + "' src='img/" + this.graphicName + "_brick1.jpg' />") :
+              ((brickType > 1) ? "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;</td></tr></table>":
+                                 "<table class=\"InsideBrick" + unbreakableBrick + "\"><tr><td>&nbsp;&nbsp;&nbsp;&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;</td></tr></table>");
+  },
+
+  refreshObjects: function(theme = "") {
+
+      // get random theme if there is no graphicName or random asking
+      if (theme == "random" || (this.graphicName == "" && theme == "")) {
+          let keysDict = this.getThemeIndexes();
+          this.graphicName = keysDict.random(); //[Math.floor(keysDict.length * Math.random())];
+      }
+      else if (theme != "") this.graphicName = theme;
+
+      // get the complet theme name
+      this.graphicName = this.themeDictionnary[this.graphicName];
+      this.getObjectsList().map(function(obj) { return obj.printObject(); });
+  }
 };
 
+// ** *---------------------------------------------------* **
+// **                   HANDLER PART
+// ** *---------------------------------------------------* **
 
-var mainCarriage = null;
+function handlerKey(event) {
+  let keyPress = event.which || event.keyCode;
 
-// events mouse & keyboard
+  if (keyPress == 43 && gameProperties.movingTimeOut > 1) gameProperties.movingTimeOut--;
+  else if (keyPress == 45) gameProperties.movingTimeOut++;
+  else if (keyPress == 42) gameProperties.movingDelta++;
+  else if (keyPress == 47 && gameProperties.movingDelta > 1) gameProperties.movingDelta--;
+  else if (keyPress == 48) { // zero just because the touch is large
+      for (var i = 0, tabBallsLen = gameComponents.tabBalls.length; i < tabBallsLen; i++) {
+          gameComponents.tabBalls[i].element.innerHTML = "O";
+      }
+  }
+  else if ((keyPress >= 49 && keyPress <= 57) ||
+     (keyPress >= 96 && keyPress <= 105)) { // from 1 to 9
+      // enter the ball number with keyboard
+      var nbBallDem = String.fromCharCode(keyPress);
+      // check if there is enough
+      if (gameProperties.nbBalls < nbBallDem) nbBallDem = gameProperties.nbBalls;
+      // get the rest of balls
+      nbBallDem = nbBallDem - gameComponents.tabBalls.length;
+      for (let i = 0; i < nbBallDem; i++)
+          gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
+  }
+  else if (keyPress == 32) gameComponents.carriage.cheated(); // space
+  else if (keyPress == 27) alert(`Pause, Boss is here !\n\n${instructions}\nOK to continue ...`); // escape
+  else if (keyPress == 79) { // 'O'
+    graphicalComponents.switchGraphic(gameComponents.tabBalls);
+    graphicalComponents.refreshObjects();
+  }
+  else if (graphicalComponents.getCodeThemeIndexes().indexOf(keyPress) > -1) { // 'C', 'E', 'T', 'B'
+    graphicalComponents.refreshObjects(String.fromCharCode(keyPress));
+  }
+  else if (keyPress === 68) { // 'D'
+      gameComponents.carriage.doubleCarriage = !gameComponents.carriage.doubleCarriage;
+      gameComponents.carriage.printObject();
+  }
+  else if (keyPress == 73) { // 'I'
+      alert(instructions);
+  }
+  else if (keyPress >= 65) { // a partir de 'A'
+      gameComponents.tabBalls.map(function(objBal) { objBal.element.innerHTML = String.fromCharCode(keyPress); });
+  }
+  return true;
+}
 
-function moveCarriageByKeyboard() {
+function moveCarriageByKeyboard(event) {
 
-  var moveCarriage = function (keyCode) {
-    switch (keyCode) {
-        case 37:  //deplacement vers la gauche
-            carriage.moveTo(MOVING_DIRECTION.LEFT);
-            break;
-        case 39: //deplacement vers la droite
-            carriage.moveTo(MOVING_DIRECTION.RIGHT);
-            break;
-        case 38: //acceleration du deplacement chariot
-            carriage.deltaCarriage++;
-            break;
-        case 40: // descelleration du deplacement chariot
-            if (carriage.deltaCarriage > 2) carriage.deltaCarriage--;
-            break;
-        default: // ne rien faire
-            break;
-    }
+  let keyCode = event.keyCode;
+  switch (keyCode) {
+      case 37:  // move to the left
+          gameComponents.carriage.moveTo(ORIENTATION.LEFT);
+          break;
+      case 39: // move to the right
+          gameComponents.carriage.moveTo(ORIENTATION.RIGHT);
+          break;
+      case 38: // carriage acceleration
+          gameComponents.carriage.deltaCarriage++;
+          break;
+      case 40: // carriage descelleration
+          if (gameComponents.carriage.deltaCarriage > 2) gameComponents.carriage.deltaCarriage--;
+          break;
+      default: // nothing to do
+          break;
   }
 
-  return function (event) { moveCarriage(event.keyCode); };
 }
 
 function moveCarriageByMouse() {
-  var moveCarriage = function (event) { carriage.move(event.clientX); };
-  return moveCarriage;
+  return function (event) { gameComponents.carriage.move(event.x); };
 }
-
 
 // unit test
 function unitTest() {
   Init();
 
-  var ball1 = new ball("4");
+  var ball1 = new Ball("4");
   console.log(ball1.element);
   console.log(ball1);
 
-  mainCarriage = new carriage("main");
-  console.log(mainCarriage);
+  gameComponents.carriage = new Carriage("main");
+  console.log(gameComponents.carriage);
 
-  divJeu.appendChild(ball1.element);
-  divJeu.appendChild(mainCarriage.element);
+  gameProperties.divGame.appendChild(ball1.element);
+  gameProperties.divGame.appendChild(gameComponents.carriage.element);
 }
 
 function goBall() {
@@ -189,12 +304,16 @@ function goBall() {
 }
 
 function Init() {
-  divJeu = document.getElementById("jeu");
-  console.log(divJeu);
-  if (!divJeu) return false;
+  gameProperties.divGame = document.getElementById("game");
+  if (!gameProperties.divGame) return false;
+  // get the screen size
+  setScreenSize();
 
-  //document.onkeypress = handlerKey;
-  document.onkeydown = moveCarriageByKeyboard();
+  // keyboard and mouse management
+  document.onkeypress = handlerKey;
+  document.onkeydown = moveCarriageByKeyboard;
   document.onmousemove = moveCarriageByMouse();
-  setTimeout('goBall', properties.movingTimer);
+
+  document.body.onresize = setScreenSize;
+  setTimeout('goBall', gameProperties.movingTimeOut);
 }

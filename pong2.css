@@ -21,26 +21,25 @@ img {
 .Ball {
   top: 0px;
   left: 0px;
-  position: absolute;
+  position: fixed;
   color: #000000;
 }
 
 .Carriage {
   top: 0px;
+  /*bottom: 10px;*/
   left: 0px;
-  position: absolute;
+  position: fixed;
+  display: inline-block;
   color: #000000;
 }
 
 .Brick {
   top: 0px;
   left: 0px;
-  position: absolute;
+  position: fixed;
   color: #000000;
-  margin: 0px;
-  padding: 0px;
-  width: 45px;
-  height: 25px;
+  display: inline-block;
 }
 
 .brickImg {
@@ -48,12 +47,12 @@ img {
   height: 25px;
 }
 
+/*
 .ballImg {
-  /*width: 16px;
-  height: 16px;*/
-  border: 0px none;
+  width: 16px;
+  height: 16px;
 }
-
+*/
 .unbreakableBrick {
   border: 2px black solid;
 }

@@ -26,11 +26,11 @@
 /* ** -- Version 3.2 :  Strict JavScript                   -- ** */
 /* ** -- Version 3.3 :  Update code, ready for functionnal -- ** */
 /* ** -- Version 3.4 :  Strict JavaScript & ECMA v6 norm   -- ** */
-/* ** -- Version 3.5 :  Remove the IE part                 -- ** */
+/* ** -- Version 3.5 :  Remove the IE part (EndOfLife IE)  -- ** */
+/* ** -- Version 3.6 :  Love JavaScript                    -- ** */
 /* ** ------------------------------------------------------- ** */
 
 'use strict';
-
 
 // ** *---------------------------------------------------* **
 // **               PROPERTIES GAME PART
@@ -40,8 +40,9 @@
 const gameProperties = {
     nbBricks      : 60,
     nbBalls       : 15,
+    usingBalls    : 0,
     movingDelta   : 3, // moving delta distance between two ticks
-    scaleError    : 6.4, // 2.1 * movingDelta,
+    scaleError    : 1.2, // 2.1 * movingDelta,
     movingTimeOut : 7, // game looping timeout 7ms
     screenMarge   : {x: 50, y: 10},
     screenSize    : null,
@@ -81,11 +82,14 @@ Array.prototype.random = function () {
 
 function getScreenSize() {
     return {
-        x: (window.innerWidth || document.body.clientWidth || document.body.offsetWidth) - gameProperties.screenMarge.x,
+        x: (window.innerWidth  || document.body.clientWidth  || document.body.offsetWidth)  - gameProperties.screenMarge.x,
         y: (window.innerHeight || document.body.clientHeight || document.body.offsetHeight) - gameProperties.screenMarge.y
     };
 }
 
+function setScreenSize() {
+    gameProperties.screenSize = getScreenSize();
+}
 
 // ** *---------------------------------------------------* **
 // **                   BALL PART
@@ -102,7 +106,7 @@ function Ball(objNumber) {
     this.printObject = function() { this.element.innerHTML = graphicalComponents.getBall(); };
     this.printObject();
 
-    // randomisation du positionnement des balles
+    // random ball placing
     this.moving = {
         x: Math.floor((gameProperties.screenSize.x) * Math.random()),
         y: Math.floor((gameProperties.screenSize.y) * Math.random()),
@@ -120,7 +124,7 @@ function Ball(objNumber) {
         };
     };
 
-    // placer la balle dans le jeu
+    // set ball to game board
     gameComponents.gameDiv.appendChild(this.element);
 
     // methodes
@@ -149,12 +153,10 @@ function Ball(objNumber) {
     };
 
     // rebound if object on the way
-    this.objectRebound = function() {
-      return graphicalComponents
+    this.objectRebound = () => graphicalComponents
                 .getObjectsList()
-                .map( (objRebound) => { return { objCollision: objRebound, orientation: intersectBallObject(this, objRebound) }; })
-                .find( (obj2Find) => obj2Find.orientation !== false );
-    };
+                .map(  (objRebound) => ({ objCollision: objRebound, orientation: intersectBallObject(this, objRebound) }) )
+                .find( (obj2Find)   => obj2Find.orientation !== false );
 
     // move the ball
     this.move = function () {
@@ -188,17 +190,46 @@ function Ball(objNumber) {
     this.impact = () => this.changeBallOrientation(this.touchedPointOrientation);
 }
 
-    // check the ball if follow on carriage and in game area
-    // cheat or in game board
+// check the ball if follow on carriage and in game area
+// cheat or in game board
 const isObjectNotInArea = (obj) => !(obj.getCoordinates().point2.y <= gameProperties.screenSize.y + gameProperties.movingDelta || gameProperties.switchCheated);
 const cmpInferiorityWithPrecisionError = (x, y) => (y - x) < gameProperties.scaleError;
 const cmpAbsoluteInferirorityWithPrecisionError = (x, y) => Math.abs(y - x) < gameProperties.scaleError;
 
+function cmpInferioritySegmentsWithPrecisionError (segment1, segment2) {
+  // (y1 - x1) < gameProperties.scaleError
+}
+
+
+// Segment Object
+var Segment = function (startPoint, endPoint) {
+    this.startPoint = startPoint;
+    this.endPoint   = endPoint;
+
+    let triangle = { a: this.endPoint.x - this.startPoint.x, b: this.endPoint.y - this.startPoint.x };
+    let angle = Math.acos(triangle.a / triangle.b);
+    let length = Math.sqrt(Math.pow(triangle.a, 2) + Math.pow(triangle.b, 2));
+    this.vector = { x: length, y: angle };
+
+    this.intersect = function (externalSegment, precisionError = 0) {
+        // get the formule 3x + y for two segments
+
+        // ex: Segment1 -3x + y
+
+        // ex: Segment2 17x +y
+
+        return true;
+    };
+
+    return this;
+};
+
+
 function intersectBallObject(tmpBall, comparedObject) {
 
     // 3 return values
-    // - false : no intersection
-    // - ORIENTATION.VERTICAL : intersection by vertical
+    // - false                  : no intersection
+    // - ORIENTATION.VERTICAL   : intersection by vertical
     // - ORIENTATION.HORIZONTAL : intersection by horizontal
 
     if (comparedObject == null || tmpBall == null || tmpBall == comparedObject)
@@ -212,6 +243,25 @@ function intersectBallObject(tmpBall, comparedObject) {
 
     // intersection calculation
     let intersect = false;
+
+    // new calculation
+    // - ball comes from left of brick
+    //   test the moving from left to right (ball.moving.orientation.x == ORIENTATION.LEFT)
+    //   extract the segment ball [ (p2.x;p1.y); (p2.x; p2.y) ] & brick [ (p1.x;p1.y); (p1.x; p2.y) ]
+
+    // - ball comes from right of brick
+    //   test the moving from right to left (ball.moving.orientation.x == ORIENTATION.RIGHT)
+    //   extract the segment ball [ (p1.x;p1.y); (p1.x; p2.y) ] & brick [ (p2.x;p1.y); (p2.x; p2.y) ]
+
+    // - ball comes from top of brick
+    //   test the moving from top to bottom (ball.moving.orientation.y == 1)
+    //   extract the segment ball [ (p1.x;p2.y); (p2.x; p2.y) ] & brick [ (p1.x;p1.y); (p2.x; p1.y) ]
+
+    // - ball comes from bottom of brick
+    //   test the moving from bottom to top (ball.moving.orientation.y == -1)
+    //   extract the segment ball [ (p1.x;p1.y); (p2.x; p1.y) ] & brick [ (p1.x;p2.y); (p2.x; p2.y) ]
+
+    // actual calculation
     if (((cmpInferiorityWithPrecisionError(ballCoordinates.point1.x, comparedObjectCoordinates.point1.x)
               && cmpInferiorityWithPrecisionError( comparedObjectCoordinates.point2.x, ballCoordinates.point1.x))
           ||
@@ -257,7 +307,7 @@ function Brick(objNumber) {
         TRIPLE_BALLS    : 4,
         DOUBLE_CARRIAGE : 5,
         UNBREAKABLE     : 6,
-        rnd             : function() { return [2,3,4,5,6].random();}
+        rnd             : () => [2,3,4,5,6].random()
     };
 
     // brick state
@@ -281,7 +331,7 @@ function Brick(objNumber) {
     // append brick to the game
     gameComponents.gameDiv.appendChild(this.element);
 
-    this.getSize = () => { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; };
+    this.getSize = () => ({x: this.element.offsetWidth, y: this.element.offsetHeight});
 
     // this part has to be exported
     this.getRandomPosition = function () {
@@ -331,7 +381,7 @@ function Brick(objNumber) {
             case Brick.TYPE.TRIPLE_BALLS:
                 let nbBallAsked = 3 - gameComponents.tabBalls.length;
                 for (let i = 0; i < nbBallAsked; i++)
-                    gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
+                    gameComponents.tabBalls.push(new Ball(gameComponents.usingBalls++));
                 break;
             case Brick.TYPE.DOUBLE_CARRIAGE:
                 gameComponents.carriage.doubleCarriage = true;
@@ -353,9 +403,7 @@ function Brick(objNumber) {
 }
 
 function containtBrickPosition(searchBrick) {
-    return gameComponents.tabBricks.find(
-                function (objBrick) { return searchBrick.isEqualPosition(objBrick); }
-            ) !== undefined;
+    return gameComponents.tabBricks.find( (objBrick) => searchBrick.isEqualPosition(objBrick) ) !== undefined;
 }
 
 
@@ -374,12 +422,9 @@ function Carriage() {
     this.deltaCarriage = 20;
     this.doubleCarriage = false;
 
-    this.getSize = function () { return {x: this.element.offsetWidth, y: this.element.offsetHeight}; };
-
-    this.position = { 
-        x: (gameProperties.screenSize.x / 2),
-        y: getScreenSize().y - 40
-    };
+    this.getSize = () => ({x: this.element.offsetWidth, y: this.element.offsetHeight});
+    this.position = { x: (gameProperties.screenSize.x / 2), y: getScreenSize().y - 40 };
+    // for bottom this.position = { x: (gameProperties.screenSize.x / 2), y: 10 };
 
     this.printObject = function () {
         this.element.innerHTML = graphicalComponents.getCarriage(this.doubleCarriage, gameProperties.switchCheated);
@@ -389,14 +434,17 @@ function Carriage() {
     this.refresh = function () {
         this.position.y = getScreenSize().y - this.getSize().y;
         this.element.style.top = this.position.y + "px";
+        /* for bottom this.element.style.bottom = this.position.y + "px";*/
         this.element.style.left = ((gameProperties.switchCheated) ? "0" : this.position.x) + "px";
     };
 
     this.getCoordinates = function() {
         let tmpSize = this.getSize();
+        let yByTopPosition = this.element.style.top.replace(/px/, "");
         return {
-          point1 : { x: this.position.x,                y: this.position.y },
-          point2 : { x: this.position.x + tmpSize.x,    y: this.position.y + tmpSize.y }
+          point1 : { x: this.position.x,                    y: yByTopPosition },
+          point2 : { x: this.position.x + tmpSize.x,        y: yByTopPosition + tmpSize.y },
+          center : { x: this.position.x + tmpSize.x / 2,    y: yByTopPosition + tmpSize.y / 2 }
         };
       };
 
@@ -474,7 +522,7 @@ const graphicalComponents = {
 
         // get the complet theme name
         this.graphicName = this.themeDictionnary[this.graphicName];
-        this.getObjectsList().map(function(obj) { return obj.printObject(); });
+        this.getObjectsList().map( (obj) => obj.printObject() );
     }
 };
 
@@ -501,22 +549,26 @@ Have Fun !
 // ** *---------------------------------------------------* **
 
 function Init() {
-    gameProperties.screenSize = getScreenSize();
+    // check game is present in HTML
+    // create it if not exists
     gameComponents.gameDiv = document.getElementById("game");
-    if (!gameComponents.gameDiv) return false;
+    if (!gameComponents.gameDiv) {
+        gameComponents.gameDiv = document.createElement("div");
+        gameComponents.gameDiv.id = "game";
+        document.body.appendChild(gameComponents.gameDiv);
+    };
+
+    setScreenSize();
 
     // instanciate carriage
     gameComponents.carriage = new Carriage();
 
     // instanciate first ball
-    gameComponents.tabBalls = new Array();
-    gameComponents.tabBalls.push(new Ball(0));
+    gameComponents.tabBalls = [];
+    gameComponents.tabBalls.push(new Ball(gameProperties.usingBalls++));
 
     // instanciate bricks
-    gameComponents.tabBricks = new Array(); //gameProperties.nbBricks);
-    //console.log(gameComponents.tabBricks.length);
-    //gameComponents.tabBricks.map( console.log );
-    //gameComponents.tabBricks.map( (obj, idx) => obj = new Brick(idx) );
+    gameComponents.tabBricks = [];
     for (var i = 0; i < gameProperties.nbBricks; i++)
         gameComponents.tabBricks.push(new Brick(i));
 
@@ -524,6 +576,9 @@ function Init() {
     document.onkeypress = handlerKey;
     document.onkeydown = moveCarriageByKeyboard;
     document.onmousemove = moveCarriageByMouse();
+
+    // during the screen resizing
+    document.body.onresize = setScreenSize;
 
     // refresh environment with random theme
     graphicalComponents.refreshObjects("random");
@@ -535,10 +590,10 @@ function Init() {
 
 function goBall() {
   // move balls and get the intersected objects
-  gameComponents.tabBalls.map(function(objBall) { objBall.move(); });
+  gameComponents.tabBalls.map( (objBall) => objBall.move() );
 
-  /* 
-  Functionnal part
+  /*
+  Functionnal part: too slow
   
   // and get object intersected
   let objectsIntersectedLst = gameComponents.tabBalls.map(objBall => objBall.move());
@@ -552,7 +607,9 @@ function goBall() {
   */
 
   // remove all balls wich are not in board area
-  gameComponents.tabBalls.filter(isObjectNotInArea).map(function (b) { b.remove(); });
+  gameComponents.tabBalls
+                    .filter(isObjectNotInArea)
+                    .map( b => b.remove() );
 
   // game over if nomore balls
   if (gameComponents.tabBalls.length == 0) {
@@ -587,9 +644,8 @@ function handlerKey(event) {
     else if (keyPress == 42) gameProperties.movingDelta++;
     else if (keyPress == 47 && gameProperties.movingDelta > 1) gameProperties.movingDelta--;
     else if (keyPress == 48) { // zero just because the touch is large
-        for (var i = 0, tabBallsLen = gameComponents.tabBalls.length; i < tabBallsLen; i++) {
-            gameComponents.tabBalls[i].element.innerHTML = "O";
-        }
+        for (let tmpBall of gameComponents.tabBalls)
+            tmpBall.element.innerHTML = "O";
     }
     else if ((keyPress >= 49 && keyPress <= 57) ||
 			 (keyPress >= 96 && keyPress <= 105)) { // from 1 to 9
@@ -600,7 +656,7 @@ function handlerKey(event) {
         // get the rest of balls
         nbBallDem = nbBallDem - gameComponents.tabBalls.length;
         for (let i = 0; i < nbBallDem; i++)
-            gameComponents.tabBalls.push(new Ball(gameComponents.tabBalls.length));
+            gameComponents.tabBalls.push(new Ball(gameComponents.usingBalls++));
     }
     else if (keyPress == 32) gameComponents.carriage.cheated(); // space
     else if (keyPress == 27) alert(`Pause, Boss is here !\n\n${instructions}\nOK to continue ...`); // escape
@@ -619,7 +675,7 @@ function handlerKey(event) {
         alert(instructions);
     }
     else if (keyPress >= 65) { // a partir de 'A'
-        gameComponents.tabBalls.map(function(objBal) { objBal.element.innerHTML = String.fromCharCode(keyPress); });
+        gameComponents.tabBalls.map( (objBal) => { objBal.element.innerHTML = String.fromCharCode(keyPress); });
     }
     return true;
 }
