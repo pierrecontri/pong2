@@ -42,8 +42,11 @@ ENDHeader;
 Made entirely by hand in Notepad, TextEdit, I tried to write clean code and annotations. The technologies used are HTML, JavaScript and CSS. The sources present on the Internet are lacking annotation after a second exercise in style as Microsoft's Ajax pages. The design is not beautiful, but the game is very fast. I am currently developing a function to go into a game more aesthetic. Only the design is not my forte.
 The game was written in a procedural manner, can be passed in writing later. The only reason to have passed in object is to show that we can properly encode the object in JavaScript. Its pitfalls is its loss of speed 1/10th.
       </p>
+	  <br />
       <input type="button" class="btnsubmit" value="Bricks Break ..." onclick="javascript:window.open('./data/pong2/pong2.html','CasseBrique','width=800, height=640, toolbar=no, menubar=no, scrollbars=no, resizable=1, status=no, location=no');"/>\n
-
+<br />
+<br />
+<br />
 {$listElems->fillContentObjects()}\n
 
 ENDCasseB;
