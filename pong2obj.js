@@ -244,7 +244,8 @@ function intersectBallObject(tmpBall, comparedObject) {
     // intersection calculation
     let intersect = false;
 
-    // new calculation
+    // new calculation : use as two areas
+
     // - ball comes from left of brick
     //   test the moving from left to right (ball.moving.orientation.x == ORIENTATION.LEFT)
     //   extract the segment ball [ (p2.x;p1.y); (p2.x; p2.y) ] & brick [ (p1.x;p1.y); (p1.x; p2.y) ]
@@ -261,7 +262,40 @@ function intersectBallObject(tmpBall, comparedObject) {
     //   test the moving from bottom to top (ball.moving.orientation.y == -1)
     //   extract the segment ball [ (p1.x;p1.y); (p2.x; p1.y) ] & brick [ (p1.x;p2.y); (p2.x; p2.y) ]
 
-    // actual calculation
+    // rectangle intersection
+    // A.X1 < B.X2: 	true
+    // A.X2 > B.X1: 	true
+    // A.Y1 < B.Y2: 	true
+    // A.Y2 > B.Y1: 	true
+    // Intersect:    	true
+
+/* New calculation
+    if (ballCoordinates.point1.x < comparedObjectCoordinates.point2.x
+        &&
+        ballCoordinates.point2.x > comparedObjectCoordinates.point1.x
+        &&
+        ballCoordinates.point1.y < comparedObjectCoordinates.point2.y
+        &&
+        ballCoordinates.point2.y < comparedObjectCoordinates.point1.y
+        ) {
+      console.log("intersect");
+      // get the intersection type
+      // if x equals -> vertical intersection
+      if (cmpInferiorityWithPrecisionError(ballCoordinates.point1.x, comparedObjectCoordinates.point1.x)
+      ||
+      cmpInferiorityWithPrecisionError(ballCoordinates.point2.x, comparedObjectCoordinates.point1.x)
+      ||
+      cmpInferiorityWithPrecisionError(ballCoordinates.point1.x, comparedObjectCoordinates.point2.x)
+      ||
+      cmpInferiorityWithPrecisionError(ballCoordinates.point2.x, comparedObjectCoordinates.point2.x))
+
+      return ORIENTATION.VERTICAL;
+
+      // if y equals -> horizontal intersection
+      else return ORIENTATION.HORIZONTAL;
+    }
+*/
+
     if (((cmpInferiorityWithPrecisionError(ballCoordinates.point1.x, comparedObjectCoordinates.point1.x)
               && cmpInferiorityWithPrecisionError( comparedObjectCoordinates.point2.x, ballCoordinates.point1.x))
           ||
@@ -286,7 +320,6 @@ function intersectBallObject(tmpBall, comparedObject) {
  
         intersect = ORIENTATION.HORIZONTAL;
     }
-
     return intersect;
 }
 
