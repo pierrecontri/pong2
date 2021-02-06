@@ -1,98 +1,109 @@
+<!DOCTYPE html>
 <html>
 <head>
+<meta charset="utf-8" />
 <style type="text/css">
 .tablePingPong {
-    border-style : solid;
-    border-color : #000000;
-    border-height : 0px;
-    border-width : 0px 0px 0px 0px;
-    padding : 1px 1px 1px 1px;
-    height : 100%;
-    width : 100%;
+    border-style : none;
+    border-width : 0px;
+    padding      : 1px 1px 1px 1px;
+    height       : 100%;
+    width        : 100%;
 }
 .trPingPong {
     border-style : solid;
     border-color : #000000;
-    border-height : 0px;
     border-width : 0px;
-    padding : 1px 1px 1px 1px;
-    height : 9px;
+    padding      : 1px 1px 1px 1px;
+    height       : 9px;
 }
 .tdPingPong {
     border-style : solid;
-    border-height : 0px;
     border-width : 0px 0px 1px 0px;
-    padding : 1px 1px 1px 1px;
-    height : 9px;
+    padding      : 1px 1px 1px 1px;
+    height       : 9px;
 }
 .tdRaquette {
-    border-style : solid;
-    border-height : 0px;
-    border-width : 0px 0px 0px 0px;
-    padding : 1px 1px 1px 1px;
     height : 9px;
 }
-div.dping {
+div.dball {
     position : relative;
-    left : 0px;
-    top : 0px;
-    width : 2%;
-}
-div.dpong {
-    position : relative;
-    left : 0px;
-    top : 0px;
-    width : 2%;
+    left     : 0px;
+    top      : 0px;
+    width    : 2%;
 }
 </style>
+
 <script language="javascript">
-var x = 0;
-var y = 0;
-var posB = 0;
 
-function joue()
-{
-  var elemPing = document.getElementById("divping");
-  var elemPong = document.getElementById("divpong");
-  var elemBalle = document.getElementById("divballeping");
+var ball = null;
+var racketLst = null;
 
-  if (elemPing && elemPong && elemBalle)
-  {
-    elemPing.style.visibility = (posB < 40) ? "visible" : "hidden";
-    elemPong.style.visibility = (posB > 140) ? "visible" : "hidden";
-  }
+var Ball = function (divElem, scale = {x: 500, y: 60}, startingPoint = {x:0, y:0}) {
+  return {
+    lateralPos : 0,
+    elem       : divElem,
+    ratioWidth : Math.PI / scale.x,
+
+    getYPos: function() {
+      let radAng = this.lateralPos * this.ratioWidth;
+      let angleX = -Math.abs(Math.sin(Math.PI / 6 + radAng)); // delay : reboung behind the racket
+      return Math.round(angleX * scale.y / 2) + scale.y;
+    },
+
+    move: function() {
+      if((this.lateralPos += 5) > scale.x) this.lateralPos = (-1) * this.lateralPos;
+
+      this.elem.style.left = startingPoint.x + Math.abs(this.lateralPos) + "px";
+      this.elem.style.top  = startingPoint.y + this.getYPos() + "px";
+    }
+  };
+};
+
+var Racket = function(divElem) {
+  return {
+    distPlay: 140,
+    play: function(posBall) {
+      divElem.style.visibility = (Math.abs(parseInt(posBall) - parseInt(divElem.parentElement.offsetLeft)) < this.distPlay) ? "visible" : "hidden";
+    }
+  };
+};
+
+function start() {
+  let tableP    = document.getElementById("idTable");
+  let leftSide  = document.getElementById("tdPing1");
+  let rightSide = document.getElementById("tdPing2");
+  let sepSide   = document.getElementById("tdFil");
+
+  let scale = {
+        x: leftSide.offsetWidth + rightSide.offsetWidth + sepSide.offsetWidth,
+        y: tableP.offsetHeight
+  };
+  let startingPoint = {
+        x: 0,
+        y: -tableP.offsetHeight
+  };
+  ball = new Ball(document.getElementById("divballeping"), scale, startingPoint);
+  racketLst = [ new Racket(document.getElementById("divping")), new Racket(document.getElementById("divpong"))];
+  // start game
+  setInterval(play, 10);
 }
 
-function balle()
-{
-  if(x>90) x=0;
-  if(y>90) y=0;
-
-  var elemBalle = document.getElementById("divballeping");
-  if (elemBalle)
-  {
-    var echelleX = document.body.clientWidth * 0.36;
-    //echelleX = 1 / echelleX;
-    var echelleY = 50 / document.body.clientHeight;
-    echelleY = 1 / echelleY;
-    posB = Math.abs(Math.round((Math.cos(x) + 1) * echelleX));
-    elemBalle.style.left = posB;
-    elemBalle.style.top = -Math.abs(Math.round((Math.sin(y)) * 20 * echelleY));
-    x++;
-    y++;
-  }
-  joue();
-  setTimeout('balle()',150);
+function play() {
+  ball.move();
+  // racket visible when the ball is near it
+  racketLst.forEach(elm => elm.play(ball.lateralPos));
 }
+
 </script>
 </head>
-<body onload="balle()" onresize="javascript:document.location.reload();">
+<body onload="start();" onresize="javascript:document.location.reload();">
   <table id="idTable" class="tablePingPong">
     <tr id="trPing1" class="trPingPong" cellpadding="0" cellspacing="0" valign="bottom">
       <td id="tdRack1" class="tdRaquette" width="10%" align="right"><div id="divping" style="visibility: hidden;">O<br>/&nbsp;&nbsp;</div></td>
-      <td id="tdPing1" class="tdPingPong" width="39%" align="left"><div id="divballeping" class="dping" style="visibility: visible;">o</div></td>
+      <td id="tdPing1" class="tdPingPong" width="39%" align="left"><div id="divballeping" class="dball" style="visibility: visible;">o</div></td>
       <td id="tdFil" class="tdPingPong" width="2%" align="center">|</td>
-      <td id="tdPing2" class="tdPingPong" width="39%" align="left"><div id="divballepong" class="dpong" style="visibility: hidden;">o</div></td>
+      <td id="tdPing2" class="tdPingPong" width="39%" align="left"></td>
       <td id="tdRack2" class="tdRaquette" width="10%" align="left"><div id="divpong" style="visibility: hidden;">O<br>&nbsp;&nbsp;\</div></td>
     </tr>
   </table>

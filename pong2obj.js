@@ -617,7 +617,8 @@ function Init() {
     graphicalComponents.refreshObjects("random");
 
     // start game
-    setTimeout('goBall()', gameProperties.movingTimeOut);
+    //setTimeout('goBall()', gameProperties.movingTimeOut);
+    setInterval(goBall, gameProperties.movingTimeOut);
     return true;
 }
 
@@ -660,7 +661,7 @@ function goBall() {
       return false;
   }
 
-  setTimeout('goBall()', gameProperties.movingTimeOut);
+  //setTimeout('goBall()', gameProperties.movingTimeOut);
 }
 
 

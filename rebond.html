@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style type="text/css">
+
+</style>
+
+<script language="javascript">
+
+var ball = null;
+var ch = null;
+var racketLst = null;
+
+var Ball = function (divElem, scale = {x: 500, y: 60}, startingPoint = {x:0, y:0}) {
+  return {
+    lateralPos : 0,
+    elem       : divElem,
+    ratioWidth : Math.PI / scale.x,
+
+    getYPos: function() {
+      let radAng = this.lateralPos * this.ratioWidth;
+      let angleX = -Math.abs(Math.sin(Math.PI / 6 + radAng)); // delay : reboung behind the racket
+      return Math.round(angleX * scale.y) + scale.y;
+    },
+
+    move: function() {
+      if((this.lateralPos += 5) > scale.x) this.lateralPos = (-1) * this.lateralPos;
+
+      this.elem.style.left = startingPoint.x + Math.abs(this.lateralPos) + "px";
+      this.elem.style.top  = startingPoint.y + this.getYPos() + "px";
+      ch.style.left = this.elem.style.left;
+    }
+  };
+};
+
+var Racket = function(divElem) {
+  return {
+    elem: divElem,
+    distPlay: 200
+  };
+};
+
+function start() {
+  let scale = { x: document.body.clientWidth * 0.36, y: document.body.clientHeight };
+  let startingPoint = { x: document.body.clientWidth * 0.30, y: 300};
+  ball = new Ball(document.getElementById("divballeping"), scale, startingPoint );
+  ch = document.getElementById("ch");
+  ch.style.top  = startingPoint.y + scale.y + "px";
+  // start game
+  setInterval(play, 10);
+}
+
+function play() {
+  ball.move();
+}
+
+</script>
+</head>
+<body onload="start();" onresize="javascript:document.location.reload();" style="height: 80px;">
+
+<div>
+  <div id="divballeping" class="dball" style="visibility: visible; position:absolute">o</div>
+  <div id="ch" style="visibility: visible; position:absolute">_</div>
+</div>
+
+</body>
+</html>
