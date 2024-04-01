@@ -2,8 +2,8 @@
 // ------------------------------------------
 // Differents variables for the web site
 class Pong2Constants {
-  static $dirPhotos     = "./data/pong2/img";
-  static $ficPhotos     = "./data/pong2/photos_en.csv";
+  static $dirPhotos     = "./data/programming/pong2/img";
+  static $ficPhotos     = "./data/programming/pong2/photos_en.csv";
 }
 // ------------------------------------------
 
@@ -31,11 +31,11 @@ ENDHeader;
 
   $webPage->contentPage = <<<ENDCasseB
     <div>
-        <iframe src="./data/pong2/pingpong.html" style="height:80px; width: 100%; max-width: 500px;"></iframe>
+        <iframe src="./data/programming/pong2/pingpong.html" style="height:80px; width: 100%; max-width: 500px;"></iframe>
     </div>
     <div>
-	  <a href="javascript:;"  onclick="javascript:window.open('./data/pong2/pong2.html','CasseBrique','width=800, height=640, toolbar=no, menubar=no, scrollbars=no, resizable=1, status=no, location=no');">
-	    <img src=".//data/pong2/img/pong2View.jpg" alt="pong2" style="width: 100%; max-width: 500px;"/>
+	  <a href="javascript:;"  onclick="javascript:window.open('./data/programming/pong2/pong2.html','CasseBrique','width=800, height=640, toolbar=no, menubar=no, scrollbars=no, resizable=1, status=no, location=no');">
+	    <img src=".//data/programming/pong2/img/pong2View.jpg" alt="pong2" style="width: 100%; max-width: 500px;"/>
 	  </a>
 	</div>
       <p>

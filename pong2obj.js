@@ -385,10 +385,13 @@ function Brick(objNumber) {
     this.isEqualPosition = (tmpObject) => (this.position.x == tmpObject.position.x && this.position.y == tmpObject.position.y);
 
     // set the brick to a free place on the game board
+    this.tryInsertBrick = function() {
+      this.position = this.getRandomPosition();
+      return !containtBrickPosition(this);
+    };
+
     let escapeInfiniteLoop = 0;
-    do {
-        this.position = this.getRandomPosition();
-    } while (containtBrickPosition(this) && escapeInfiniteLoop++ < 10000);
+    while (!this.tryInsertBrick() && escapeInfiniteLoop++ < 10000);
 
     this.element.style.left = this.position.x + "px";
     this.element.style.top = this.position.y + "px";
@@ -400,9 +403,7 @@ function Brick(objNumber) {
           point2 : { x: this.position.x + tmpSize.x,    y: this.position.y + tmpSize.y }
         };
       };
-
     // out of part to change
-
 
     // destruction of the brick
     this.breakBrick = function () {
@@ -733,7 +734,6 @@ function moveCarriageByKeyboard(event) {
         default: // nothing to do
             break;
     }
-
 }
 
 function moveCarriageByMouse() {
